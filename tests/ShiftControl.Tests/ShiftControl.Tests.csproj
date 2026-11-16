@@ -24,5 +24,7 @@
   </ItemGroup>
   <ItemGroup>
     <Using Include="Xunit" />
+    <Compile Include="..\..\src\ShiftControl.App\Services\SystemIntegration.cs" Link="AppServices\SystemIntegration.cs" />
+    <Compile Include="..\..\src\ShiftControl.App\Services\AppPaths.cs" Link="AppServices\AppPaths.cs" />
   </ItemGroup>
 </Project>

@@ -41,7 +41,7 @@ public static class SystemIntegration
         else
         {
             try { folder.DeleteTask(StartupTaskName, 0); }
-            catch (System.Runtime.InteropServices.COMException ex) when (ex.HResult == unchecked((int)0x80070002)) { }
+            catch (Exception ex) when (IsMissingTask(ex)) { }
         }
         using var key = Registry.CurrentUser.CreateSubKey(RunKey, writable: true);
         key.DeleteValue(RunValue, throwOnMissingValue: false);
@@ -51,11 +51,20 @@ public static class SystemIntegration
     {
         using var key = Registry.CurrentUser.OpenSubKey(RunKey);
         if (key?.GetValue(RunValue) is string) return true;
+        return IsStartupTaskEnabled(StartupTaskName);
+    }
+
+    internal static bool IsStartupTaskEnabled(string taskName)
+    {
         dynamic scheduler = Activator.CreateInstance(Type.GetTypeFromProgID("Schedule.Service")!)!;
         scheduler.Connect();
-        try { return scheduler.GetFolder("\\").GetTask(StartupTaskName).Enabled; }
-        catch (System.Runtime.InteropServices.COMException ex) when (ex.HResult == unchecked((int)0x80070002)) { return false; }
+        try { return scheduler.GetFolder("\\").GetTask(taskName).Enabled; }
+        catch (Exception ex) when (IsMissingTask(ex)) { return false; }
     }
+
+    // .NET maps missing COM tasks/folders to IO exceptions instead of COMException.
+    internal static bool IsMissingTask(Exception ex) =>
+        ex.HResult is unchecked((int)0x80070002) or unchecked((int)0x80070003);
 
     public static void MigrateLegacyStartup(bool minimized)
     {
