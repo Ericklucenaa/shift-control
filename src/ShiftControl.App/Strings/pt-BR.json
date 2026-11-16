@@ -508,7 +508,7 @@
   "formatKit.install": "Instalação",
   "formatKit.installSelected": "Instalar marcados ({0})",
   "formatKit.upgradeAll": "Atualizar instalados ({0})",
-  "formatKit.installHint": "Um programa por vez, sem janelas de instalação. Programas já instalados são pulados. Cada instalação fica registrada na Central de desfazer.",
+  "formatKit.installHint": "Todos os marcados são enviados ao WinGet, um por vez. Ele verifica se o programa já está instalado e se há uma versão nova. Confira o resultado de cada item na fila. Novas instalações ficam registradas na Central de desfazer.",
   "formatKit.progress": "Andamento",
   "formatKit.retry": "Tentar de novo os que falharam",
   "formatKit.reboot": "Reinicie o computador para concluir algumas instalações.",
@@ -1149,6 +1149,11 @@
   "tasks.loadError": "Não foi possível atualizar os processos. Tente novamente.",
   "tasks.selectToEnd": "Selecione uma tarefa na lista e clique em Encerrar tarefa. Também funciona com o botão direito ou Delete.",
   "settings.autoInstallUpdates": "Instalar atualizações automaticamente",
-  "update.autoDescription": "Verifica novas versões a cada 2 minutos. Baixa, verifica e instala com reinício automático. Aguarda jogos, operações e diálogos terminarem. Desative para instalar manualmente.",
-  "update.autoRestart": "Versão {0} pronta. O Shift Control reiniciará em 30 segundos para atualizar. Desative a instalação automática em Configurações para adiar."
+  "update.autoDescription": "Verifica novas versões apenas ao iniciar o aplicativo. Baixa, verifica e instala com reinício automático. Aguarda jogos, operações e diálogos terminarem. Você também pode verificar manualmente abaixo.",
+  "update.autoRestart": "Versão {0} pronta. O Shift Control reiniciará em 30 segundos para atualizar. Desative a instalação automática em Configurações para adiar.",
+  "formatKit.search": "Buscar programa, ID ou categoria",
+  "formatKit.selectAll": "Marcar todos",
+  "formatKit.clearSelection": "Limpar seleção",
+  "formatKit.refresh": "Atualizar detecção",
+  "formatKit.queueError": "Não foi possível concluir a fila. Confira os resultados e tente novamente."
 }

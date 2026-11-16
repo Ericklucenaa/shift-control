@@ -2,11 +2,11 @@
 <assembly manifestVersion="1.0" xmlns="urn:schemas-microsoft-com:asm.v1">
   <assemblyIdentity version="1.0.0.0" name="ShiftControl.app" />
 
-  <!-- Executa como usuário comum; a elevação é opcional e pedida pelo botão "Reiniciar como administrador". -->
+  <!-- O aplicativo sempre solicita privilégios de administrador ao iniciar. -->
   <trustInfo xmlns="urn:schemas-microsoft-com:asm.v2">
     <security>
       <requestedPrivileges xmlns="urn:schemas-microsoft-com:asm.v3">
-        <requestedExecutionLevel level="asInvoker" uiAccess="false" />
+        <requestedExecutionLevel level="requireAdministrator" uiAccess="false" />
       </requestedPrivileges>
     </security>
   </trustInfo>

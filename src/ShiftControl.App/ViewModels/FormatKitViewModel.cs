@@ -116,7 +116,19 @@ public sealed partial class FormatKitViewModel : ObservableObject
         catch (Exception) { return []; }
     }
 
-    public IReadOnlyList<PackageGroup> Groups { get; }
+    [ObservableProperty] public partial IReadOnlyList<PackageGroup> Groups { get; set; }
+    [ObservableProperty] public partial string Search { get; set; } = "";
+
+    partial void OnSearchChanged(string value)
+    {
+        string query = value.Trim();
+        Groups = _catalog.Categories.Select(c => new PackageGroup(c, _all.Where(p =>
+            p.Package.Category == c && (query.Length == 0 ||
+            p.Name.Contains(query, StringComparison.OrdinalIgnoreCase) ||
+            p.Id.Contains(query, StringComparison.OrdinalIgnoreCase) ||
+            c.Contains(query, StringComparison.OrdinalIgnoreCase))).ToList()))
+            .Where(g => g.Items.Count > 0).ToList();
+    }
     public IReadOnlyList<Choice<string>> Profiles { get; }
     public ObservableCollection<JobVm> Jobs { get; } = [];
 
@@ -186,7 +198,7 @@ public sealed partial class FormatKitViewModel : ObservableObject
             var expected = _all.Where(p => Profile is not null && p.Package.Profiles.Contains(Profile.Value) && !p.HardwareMissing).ToHashSet();
             if (!_all.Where(p => p.Selected).ToHashSet().SetEquals(expected)) Profile = Profiles[^1];
         }
-        ToInstall = _all.Count(p => p.Selected && p.Installed != true);
+        ToInstall = _all.Count(p => p.Selected);
         ToUpgrade = _all.Count(p => p.Installed == true && p.HasUpdate);
         InstallButtonText = L.F("formatKit.installSelected", ToInstall);
         UpgradeButtonText = L.F("formatKit.upgradeAll", ToUpgrade);
@@ -194,9 +206,28 @@ public sealed partial class FormatKitViewModel : ObservableObject
     }
 
     [RelayCommand]
+    private void SelectAll() => SetSelection(true);
+
+    [RelayCommand]
+    private void ClearSelection() => SetSelection(false);
+
+    private void SetSelection(bool selected)
+    {
+        if (Running || Loading) return;
+        _applyingProfile = true;
+        foreach (var p in _all) p.Selected = selected && !p.HardwareMissing;
+        _applyingProfile = false;
+        Profile = Profiles[^1];
+        OnSelectionChanged();
+    }
+
+    [RelayCommand]
+    private Task RefreshAsync() => Running || Loading ? Task.CompletedTask : LoadAsync(force: true);
+
+    [RelayCommand]
     private Task InstallSelectedAsync() =>
-        RunAsync(_all.Where(p => p.Selected && p.Installed != true)
-            .Select(p => new InstallJob { Package = p.Package, Kind = JobKind.Install }).ToList());
+        RunAsync(_all.Where(p => p.Selected)
+            .Select(p => new InstallJob { Package = p.Package, Kind = JobKind.Install, RecordInstallation = p.Installed != true }).ToList());
 
     [RelayCommand]
     private Task UpgradeAllAsync() =>
@@ -206,7 +237,7 @@ public sealed partial class FormatKitViewModel : ObservableObject
     [RelayCommand]
     private Task RetryFailedAsync() =>
         RunAsync(Jobs.Where(j => j.Job.State is JobState.Failed or JobState.Cancelled)
-            .Select(j => new InstallJob { Package = j.Job.Package, Kind = j.Job.Kind }).ToList());
+            .Select(j => new InstallJob { Package = j.Job.Package, Kind = j.Job.Kind, RecordInstallation = j.Job.RecordInstallation }).ToList());
 
     [RelayCommand]
     private void Cancel() => _cts?.Cancel();
@@ -247,6 +278,12 @@ public sealed partial class FormatKitViewModel : ObservableObject
             HasFailures = report.Failed > 0 || jobs.Any(j => j.State == JobState.Cancelled);
             RebootRequired = report.RebootRequired;
             ReportText = L.F("formatKit.report", report.Succeeded, report.Failed, Fmt.Duration(report.Finished - report.Started));
+        }
+        catch (Exception ex)
+        {
+            _log.LogError(ex, "Falha na fila do Format Kit.");
+            Message = L.Get("formatKit.queueError");
+            HasFailures = true;
         }
         finally
         {

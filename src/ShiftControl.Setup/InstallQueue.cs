@@ -9,6 +9,7 @@ public sealed class InstallJob
 {
     public required CatalogPackage Package { get; init; }
     public required JobKind Kind { get; init; }
+    public bool RecordInstallation { get; init; } = true;
     public JobState State { get; internal set; } = JobState.Queued;
     public WinGetOutcome? Outcome { get; internal set; }
     public int? ExitCode { get; internal set; }
@@ -73,7 +74,7 @@ public sealed class InstallQueue
                 job.ExitCode = result.ExitCode;
                 job.OutputTail = Tail(result.Output, 12);
                 job.State = WinGetCodes.IsOk(outcome) ? JobState.Done : JobState.Failed;
-                if (job.Kind == JobKind.Install && outcome is WinGetOutcome.Success or WinGetOutcome.RebootRequired)
+                if (job.RecordInstallation && job.Kind == JobKind.Install && outcome is WinGetOutcome.Success or WinGetOutcome.RebootRequired)
                     Installed?.Invoke(job);
             }
             catch (OperationCanceledException)

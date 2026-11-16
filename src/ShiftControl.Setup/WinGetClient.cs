@@ -109,7 +109,8 @@ public sealed class WinGetClient
     public async Task<IReadOnlyList<InstalledEntry>> ListInstalledAsync(CancellationToken ct = default)
     {
         var r = await _runner.RunAsync(Executable, ["list", .. Common], null, ct);
-        if (r.ExitCode != 0) _log.LogWarning("winget list terminou com {Code}.", WinGetCodes.Hex(r.ExitCode));
+        if (r.ExitCode != 0)
+            throw new IOException($"winget list: {WinGetCodes.Hex(r.ExitCode)}. {r.Output.Trim()}");
         return WinGetListParser.Parse(r.Output.Split('\n'));
     }
 

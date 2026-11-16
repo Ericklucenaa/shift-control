@@ -172,6 +172,14 @@ public class InstallQueueTests
     private static InstallJob Job(string id) => new() { Package = Catalog.Load().Find(id)!, Kind = JobKind.Install };
 
     [Fact]
+    public async Task Failed_inventory_is_not_treated_as_an_empty_installed_list()
+    {
+        var client = new WinGetClient(new FakeRunner(_ => 1603));
+        var error = await Assert.ThrowsAsync<IOException>(() => client.ListInstalledAsync(TestContext.Current.CancellationToken));
+        Assert.Contains("0x00000643", error.Message);
+    }
+
+    [Fact]
     public async Task Failures_do_not_stop_the_queue_and_successes_are_reported()
     {
         var runner = new FakeRunner(args => args[2] == "Discord.Discord" ? 1603 : args[2] == "Valve.Steam" ? unchecked((int)0x8A150061) : 0);
@@ -200,6 +208,24 @@ public class InstallQueueTests
         var jobs = new[] { Job("7zip.7zip"), Job("VideoLAN.VLC") };
         await new InstallQueue(new WinGetClient(new FakeRunner(_ => 0))).RunAsync(jobs, cts.Token);
         Assert.All(jobs, j => Assert.Equal(JobState.Cancelled, j.State));
+    }
+
+    [Fact]
+    public async Task Existing_packages_are_processed_without_registering_an_uninstall_undo()
+    {
+        var runner = new FakeRunner(_ => 0);
+        var queue = new InstallQueue(new WinGetClient(runner));
+        var recorded = new List<string>();
+        queue.Installed += j => recorded.Add(j.Package.Id);
+        var jobs = new[]
+        {
+            new InstallJob { Package = Catalog.Load().Find("Valve.Steam")!, Kind = JobKind.Install, RecordInstallation = false },
+            Job("7zip.7zip"),
+        };
+        var report = await queue.RunAsync(jobs, TestContext.Current.CancellationToken);
+        Assert.Equal(2, runner.Calls.Count);
+        Assert.Equal(2, report.Succeeded);
+        Assert.Equal(["7zip.7zip"], recorded);
     }
 }
 

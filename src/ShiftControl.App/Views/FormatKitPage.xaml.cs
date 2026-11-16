@@ -35,6 +35,8 @@ public sealed partial class FormatKitPage : Page
         Vm.PropertyChanged += (_, e) =>
         {
             if (e.PropertyName == nameof(FormatKitViewModel.Profile)) SyncProfileButtons();
+            if (e.PropertyName == nameof(FormatKitViewModel.Running))
+                foreach (var rb in _profileButtons) rb.IsEnabled = !Vm.Running;
         };
 
         Loaded += async (_, _) =>

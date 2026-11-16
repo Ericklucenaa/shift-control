@@ -16,7 +16,7 @@ Var NoRestart
 Name "Shift Control"
 OutFile "${OUTPUT_FILE}"
 InstallDir "$LOCALAPPDATA\Programs\ShiftControl"
-RequestExecutionLevel user
+RequestExecutionLevel admin
 SetCompressor /SOLID lzma
 !define MUI_ABORTWARNING
 !define MUI_FINISHPAGE_RUN "$INSTDIR\ShiftControl.exe"
@@ -108,6 +108,8 @@ Function un.onInit
 FunctionEnd
 
 Section "Uninstall"
+  ReadEnvStr $0 "USERNAME"
+  nsExec::ExecToLog 'schtasks /Delete /TN "ShiftControl-$0" /F'
   DeleteRegKey HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\ShiftControl"
   ReadRegStr $0 HKCU "Software\Microsoft\Windows\CurrentVersion\Run" "ShiftControl"
   StrCpy $1 '$\"$INSTDIR\ShiftControl.exe$\"'

@@ -182,6 +182,11 @@ public partial class App : Application
 
         // Os recursos do app só podem ser alterados a partir daqui (no construtor ainda não existem).
         var settings = Services.GetRequiredService<SettingsService>();
+        if (!Environment.GetCommandLineArgs().Any(a => a.StartsWith("--data-dir=", StringComparison.Ordinal)))
+        {
+            try { SystemIntegration.MigrateLegacyStartup(settings.Current.StartMinimized); }
+            catch (Exception ex) { Log.Warning(ex, "Could not migrate Windows startup registration."); }
+        }
         var theme = Services.GetRequiredService<ThemeService>();
         theme.Install(Resources);
         theme.SetAccent(settings.Current.Accent);

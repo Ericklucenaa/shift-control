@@ -11,21 +11,56 @@ public static class SystemIntegration
     private const string RunValue = "ShiftControl";
     public const string MinimizedArgument = "--minimized";
     public const string PawnIoUrl = "https://pawnio.eu/";
+    private static string StartupTaskName => "ShiftControl-" + Environment.UserName;
 
-    /// <summary>Inicialização com o Windows pela chave Run do usuário (não exige administrador).</summary>
+    /// <summary>Uma tarefa por usuário permite iniciar elevado no logon.</summary>
     public static void SetStartWithWindows(bool enabled, bool minimized)
     {
-        using var key = Registry.CurrentUser.CreateSubKey(RunKey, writable: true);
+        dynamic scheduler = Activator.CreateInstance(Type.GetTypeFromProgID("Schedule.Service")!)!;
+        scheduler.Connect();
+        dynamic folder = scheduler.GetFolder("\\");
         if (enabled)
-            key.SetValue(RunValue, $"\"{AppPaths.Executable}\"" + (minimized ? " " + MinimizedArgument : ""));
+        {
+            dynamic task = scheduler.NewTask(0);
+            string sid = System.Security.Principal.WindowsIdentity.GetCurrent().User!.Value;
+            task.RegistrationInfo.Description = "Shift Control";
+            task.Principal.UserId = sid;
+            task.Principal.LogonType = 3; // InteractiveToken: no stored password.
+            task.Principal.RunLevel = 1; // HighestAvailable.
+            task.Settings.DisallowStartIfOnBatteries = false;
+            task.Settings.StopIfGoingOnBatteries = false;
+            task.Settings.ExecutionTimeLimit = "PT0S";
+            dynamic trigger = task.Triggers.Create(9); // Logon.
+            trigger.UserId = sid;
+            dynamic action = task.Actions.Create(0);
+            action.Path = AppPaths.Executable;
+            action.Arguments = minimized ? MinimizedArgument : "";
+            action.WorkingDirectory = AppContext.BaseDirectory;
+            folder.RegisterTaskDefinition(StartupTaskName, task, 6, sid, null, 3);
+        }
         else
-            key.DeleteValue(RunValue, throwOnMissingValue: false);
+        {
+            try { folder.DeleteTask(StartupTaskName, 0); }
+            catch (System.Runtime.InteropServices.COMException ex) when (ex.HResult == unchecked((int)0x80070002)) { }
+        }
+        using var key = Registry.CurrentUser.CreateSubKey(RunKey, writable: true);
+        key.DeleteValue(RunValue, throwOnMissingValue: false);
     }
 
     public static bool IsStartWithWindowsRegistered()
     {
         using var key = Registry.CurrentUser.OpenSubKey(RunKey);
-        return key?.GetValue(RunValue) is string;
+        if (key?.GetValue(RunValue) is string) return true;
+        dynamic scheduler = Activator.CreateInstance(Type.GetTypeFromProgID("Schedule.Service")!)!;
+        scheduler.Connect();
+        try { return scheduler.GetFolder("\\").GetTask(StartupTaskName).Enabled; }
+        catch (System.Runtime.InteropServices.COMException ex) when (ex.HResult == unchecked((int)0x80070002)) { return false; }
+    }
+
+    public static void MigrateLegacyStartup(bool minimized)
+    {
+        using var key = Registry.CurrentUser.OpenSubKey(RunKey);
+        if (key?.GetValue(RunValue) is string) SetStartWithWindows(true, minimized);
     }
 
     /// <summary>Reinicia elevado. Retorna falso se o usuário recusou o UAC (o app atual continua).</summary>

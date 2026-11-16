@@ -19,17 +19,21 @@ public sealed class UpdateService(HttpClient http, ILogger<UpdateService> log) :
     private DispatcherQueueTimer? _timer;
     private readonly CancellationTokenSource _stop = new();
     private bool _checking;
+    private bool _initialized;
     public bool Installing { get; private set; }
 
     public void Initialize(DispatcherQueue ui)
     {
+        if (_initialized) return;
+        _initialized = true;
         // Isolated development/UI test instances must never install a public release.
         if (Environment.GetCommandLineArgs().Any(a => a.StartsWith("--data-dir=", StringComparison.Ordinal))) return;
         _timer = ui.CreateTimer();
         _timer.Interval = TimeSpan.FromSeconds(20);
+        _timer.IsRepeating = false;
         _timer.Tick += async (_, _) =>
         {
-            _timer.Interval = TimeSpan.FromMinutes(2);
+            _timer.Stop();
             if (_checking || Installing || !App.Services.GetRequiredService<SettingsService>().Current.CheckUpdates) return;
             _checking = true;
             try
@@ -41,7 +45,7 @@ public sealed class UpdateService(HttpClient http, ILogger<UpdateService> log) :
                 else App.Services.GetRequiredService<TrayService>().Notify(L.Get("update.availableTitle"), L.F("update.availableText", update.Version), false);
             }
             catch (OperationCanceledException) { }
-            catch (Exception ex) { log.LogWarning(ex, "Automatic update failed; will retry later."); }
+            catch (Exception ex) { log.LogWarning(ex, "Startup update check failed."); }
             finally { _checking = false; }
         };
         _timer.Start();

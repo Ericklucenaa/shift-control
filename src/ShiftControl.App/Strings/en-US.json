@@ -508,7 +508,7 @@
   "formatKit.install": "Instalação",
   "formatKit.installSelected": "Install marcados ({0})",
   "formatKit.upgradeAll": "Update instalados ({0})",
-  "formatKit.installHint": "Um programa por vez, sem janelas de instalação. Programas já instalados são pulados. Cada instalação fica registrada na Central de Undo.",
+  "formatKit.installHint": "All selected packages are sent to WinGet, one at a time. It checks existing installations and newer versions. Review each result in the queue. New installations are recorded in Undo Center.",
   "formatKit.progress": "Andamento",
   "formatKit.retry": "Tentar de novo os que falharam",
   "formatKit.reboot": "Reinicie o computador para concluir algumas instalações.",
@@ -1129,6 +1129,11 @@
   "tasks.loadError": "Processes could not be refreshed. Try again.",
   "tasks.selectToEnd": "Select a task and click End task. You can also right-click or press Delete.",
   "settings.autoInstallUpdates": "Install updates automatically",
-  "update.autoDescription": "Checks every 2 minutes. Downloads, verifies and installs with automatic restart. Waits for games, operations and dialogs. Turn off to install manually.",
-  "update.autoRestart": "Version {0} ready. Shift Control will restart in 30 seconds to update. Turn off automatic installation in Settings to postpone."
+  "update.autoDescription": "Checks once when the app starts. Downloads, verifies and installs with automatic restart after games, operations and dialogs finish. You can also check manually below.",
+  "update.autoRestart": "Version {0} ready. Shift Control will restart in 30 seconds to update. Turn off automatic installation in Settings to postpone.",
+  "formatKit.search": "Search programs, IDs or categories",
+  "formatKit.selectAll": "Select all",
+  "formatKit.clearSelection": "Clear selection",
+  "formatKit.refresh": "Refresh detection",
+  "formatKit.queueError": "Could not finish the queue. Review results and try again."
 }

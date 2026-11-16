@@ -17,6 +17,7 @@ public sealed partial class OverlayPage : Page
 {
     private readonly OverlayService _service;
     private readonly OverlayPanel _preview = new();
+    private readonly OverlayPanel _floatingPreview = new();
     private bool _capturingHotkey;
 
     public OverlayPageViewModel Vm { get; }
@@ -27,6 +28,7 @@ public sealed partial class OverlayPage : Page
         Vm = App.Services.GetRequiredService<OverlayPageViewModel>();
         InitializeComponent();
         PreviewHost.Content = _preview;
+        FloatingPreviewHost.Content = _floatingPreview;
         ScreenMini.PositionChosen += (_, pos) => Vm.SetPosition(pos.Anchor, pos.OffsetX, pos.OffsetY);
 
         Loaded += (_, _) =>
@@ -34,6 +36,7 @@ public sealed partial class OverlayPage : Page
             Vm.Reload();
             Vm.RefreshStatus();
             _preview.Apply(_service.ActivePreset);
+            _floatingPreview.Apply(_service.ActivePreset);
             _service.Rendered += OnRendered;
             _service.Changed += OnServiceChanged;
             _service.AttachPreview();
@@ -49,13 +52,24 @@ public sealed partial class OverlayPage : Page
 
     public Brush CaptureBrush(bool ok) => ViewHelpers.ThemeBrush(this, ok ? "GoodBrush" : "AttentionBrush");
 
-    private void OnRendered(object? sender, OverlayFrame frame) => _preview.Update(frame);
+    private void OnPageScrolled(object? sender, ScrollViewerViewChangedEventArgs e) =>
+        FloatingPreview.Visibility = PageScroll.VerticalOffset > 350 ? Visibility.Visible : Visibility.Collapsed;
+
+    private void OnRendered(object? sender, OverlayFrame frame)
+    {
+        _preview.Update(frame);
+        _floatingPreview.Update(frame);
+    }
 
     /// <summary>A prévia usa exatamente o preset em uso pelo overlay.</summary>
     private void OnServiceChanged(object? sender, EventArgs e)
     {
         var preset = _service.ActivePreset;
-        if (!PresetEquals(_preview.Preset, preset)) _preview.Apply(preset);
+        if (!PresetEquals(_preview.Preset, preset))
+        {
+            _preview.Apply(preset);
+            _floatingPreview.Apply(preset);
+        }
     }
 
     private static bool PresetEquals(ShiftControl.Overlay.OverlayPreset a, ShiftControl.Overlay.OverlayPreset b) =>

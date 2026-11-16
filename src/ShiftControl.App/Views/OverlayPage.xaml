@@ -34,7 +34,8 @@
         </ItemsPanelTemplate>
     </Page.Resources>
 
-    <ScrollViewer VerticalScrollBarVisibility="Auto">
+    <Grid>
+    <ScrollViewer x:Name="PageScroll" ViewChanged="OnPageScrolled" VerticalScrollBarVisibility="Auto">
         <VisualStateManager.VisualStateGroups>
             <VisualStateGroup>
                 <VisualState x:Name="Wide">
@@ -636,4 +637,14 @@
             </Grid>
         </StackPanel>
     </ScrollViewer>
+    <Border x:Name="FloatingPreview" Visibility="Collapsed" HorizontalAlignment="Right" VerticalAlignment="Bottom"
+            Margin="24" Width="380" Style="{StaticResource CardBorder}" Padding="12">
+        <StackPanel Spacing="8">
+            <TextBlock Text="{l:Tr Key=overlay.preview}" Style="{StaticResource SectionTitleText}" FontSize="14" />
+            <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto" MaxHeight="220">
+                <ContentPresenter x:Name="FloatingPreviewHost" />
+            </ScrollViewer>
+        </StackPanel>
+    </Border>
+    </Grid>
 </Page>
