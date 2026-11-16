@@ -1,0 +1,66 @@
+<ResourceDictionary
+    x:Class="ShiftControl.App.Theme.Templates"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:vm="using:ShiftControl.App.ViewModels"
+    xmlns:v="using:ShiftControl.App.Views">
+
+    <!-- Linha padrão das ferramentas: [caixa] indicador | título, detalhe, metadados | valor, estado, ações [chave] -->
+    <DataTemplate x:Key="RowTemplate" x:DataType="vm:RowVm">
+        <Grid Padding="16,12,24,12" ColumnSpacing="12" BorderBrush="{ThemeResource CardBorderBrush}" BorderThickness="0,0,0,1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <CheckBox MinWidth="0" Padding="0" VerticalAlignment="Center" IsChecked="{x:Bind IsChecked, Mode=TwoWay}"
+                      IsEnabled="{x:Bind CanCheck, Mode=OneWay}" Visibility="{x:Bind v:ViewHelpers.Visible(Selectable)}"
+                      AutomationProperties.Name="{x:Bind Title, Mode=OneWay}" />
+            <Ellipse Grid.Column="1" Width="8" Height="8" VerticalAlignment="Top" Margin="0,6,0,0" Fill="{x:Bind v:ViewHelpers.ToneBrush(Tone), Mode=OneWay}" />
+            <StackPanel Grid.Column="2" Spacing="2" VerticalAlignment="Center">
+                <TextBlock Text="{x:Bind Title, Mode=OneWay}" FontWeight="SemiBold" FontSize="13" Foreground="{ThemeResource TextPrimaryBrush}"
+                           TextWrapping="Wrap" MaxLines="2" TextTrimming="CharacterEllipsis" />
+                <TextBlock Text="{x:Bind Detail, Mode=OneWay}" Style="{StaticResource SecondaryText}" FontSize="12.5" TextWrapping="Wrap"
+                           MaxLines="2" TextTrimming="CharacterEllipsis"
+                           Visibility="{x:Bind v:ViewHelpers.VisibleIfText(Detail), Mode=OneWay}" />
+                <TextBlock Text="{x:Bind Meta, Mode=OneWay}" Style="{StaticResource CaptionText}" TextWrapping="Wrap" TextTrimming="CharacterEllipsis" MaxLines="1"
+                           Visibility="{x:Bind v:ViewHelpers.VisibleIfText(Meta), Mode=OneWay}" />
+                <Grid Height="4" Margin="0,5,0,0" CornerRadius="2" Background="{ThemeResource MeterTrackBrush}" HorizontalAlignment="Stretch"
+                      Visibility="{x:Bind v:ViewHelpers.FractionVisible(Fraction), Mode=OneWay}">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="{x:Bind v:ViewHelpers.Star(Fraction), Mode=OneWay}" />
+                        <ColumnDefinition Width="{x:Bind v:ViewHelpers.StarRest(Fraction), Mode=OneWay}" />
+                    </Grid.ColumnDefinitions>
+                    <Border CornerRadius="2" Background="{ThemeResource AccentBrush}" />
+                </Grid>
+            </StackPanel>
+            <StackPanel Grid.Column="3" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center" Margin="8,0,0,0">
+                <TextBlock Text="{x:Bind Value, Mode=OneWay}" FontSize="13" FontWeight="SemiBold" Foreground="{ThemeResource TextPrimaryBrush}"
+                           VerticalAlignment="Center" Visibility="{x:Bind v:ViewHelpers.VisibleIfText(Value), Mode=OneWay}"
+                           FontFamily="{StaticResource DisplayFont}" />
+                <TextBlock Text="{x:Bind Status, Mode=OneWay}" FontSize="12" FontWeight="SemiBold" Foreground="{x:Bind v:ViewHelpers.ToneBrush(Tone), Mode=OneWay}"
+                           VerticalAlignment="Center" Visibility="{x:Bind v:ViewHelpers.VisibleIfText(Status), Mode=OneWay}" />
+                <ProgressRing IsActive="{x:Bind Busy, Mode=OneWay}" Width="14" Height="14" Visibility="{x:Bind v:ViewHelpers.Visible(Busy), Mode=OneWay}" />
+                <Button Style="{StaticResource QuietButton}" Padding="10,4" FontSize="12" Content="{x:Bind SecondaryLabel}" Command="{x:Bind SecondaryAction}"
+                        CommandParameter="{x:Bind}" Visibility="{x:Bind v:ViewHelpers.Visible(HasSecondary)}" IsEnabled="{x:Bind v:ViewHelpers.Not(Busy), Mode=OneWay}" />
+                <Button Style="{StaticResource QuietButton}" Padding="10,4" FontSize="12" Content="{x:Bind ActionLabel}" Command="{x:Bind Action}"
+                        CommandParameter="{x:Bind}" Visibility="{x:Bind v:ViewHelpers.Visible(HasAction)}" IsEnabled="{x:Bind v:ViewHelpers.Not(Busy), Mode=OneWay}" />
+                <ToggleSwitch MinWidth="0" OnContent="" OffContent="" IsOn="{x:Bind IsOn, Mode=TwoWay}" IsEnabled="{x:Bind CanToggle, Mode=OneWay}"
+                              Margin="4,0,4,0"
+                              Visibility="{x:Bind v:ViewHelpers.Visible(Toggleable)}" AutomationProperties.Name="{x:Bind Title, Mode=OneWay}" />
+            </StackPanel>
+        </Grid>
+    </DataTemplate>
+
+    <!-- Indicador numérico compacto (ping, jitter, espaço livre…) -->
+    <DataTemplate x:Key="StatTemplate" x:DataType="vm:StatVm">
+        <StackPanel Spacing="2" MinWidth="120">
+            <TextBlock Text="{x:Bind Label}" Style="{StaticResource MetricLabelText}" />
+            <StackPanel Orientation="Horizontal" Spacing="4">
+                <TextBlock Text="{x:Bind Value, Mode=OneWay}" Style="{StaticResource MetricValueText}" Foreground="{x:Bind v:ViewHelpers.ToneBrush(Tone), Mode=OneWay}" />
+                <TextBlock Text="{x:Bind Unit}" Style="{StaticResource CaptionText}" VerticalAlignment="Bottom" Margin="0,0,0,3" />
+            </StackPanel>
+        </StackPanel>
+    </DataTemplate>
+</ResourceDictionary>

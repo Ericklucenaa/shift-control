@@ -1,0 +1,113 @@
+<Page
+    x:Class="ShiftControl.App.Views.MigrationPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:l="using:ShiftControl.App.Services"
+    xmlns:v="using:ShiftControl.App.Views"
+    xmlns:c="using:ShiftControl.App.Controls"
+    NavigationCacheMode="Required"
+    Background="Transparent">
+
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <StackPanel Padding="{StaticResource PagePadding}" Spacing="20" MaxWidth="1100" HorizontalAlignment="Left">
+            <StackPanel Spacing="2">
+                <TextBlock Text="{l:Tr Key=nav.group.tools, Upper=True}" Style="{StaticResource EyebrowText}" />
+                <TextBlock Text="{l:Tr Key=nav.migration}" Style="{StaticResource PageTitleText}" />
+                <TextBlock Text="{l:Tr Key=migration.subtitle}" Style="{StaticResource CaptionText}" FontSize="13" TextWrapping="Wrap" TextTrimming="None" />
+            </StackPanel>
+
+            <InfoBar IsOpen="{x:Bind v:ViewHelpers.HasText(Vm.Message), Mode=OneWay}" IsClosable="True" Message="{x:Bind Vm.Message, Mode=OneWay}"
+                     Severity="{x:Bind v:SettingsPage.StatusSeverity(Vm.MessageIsError), Mode=OneWay}" />
+            <c:AdminNotice Text="{l:Tr Key=migration.adminNotice}" />
+
+            <!-- Antes de formatar -->
+            <StackPanel Spacing="8">
+                <StackPanel Orientation="Horizontal" Spacing="10">
+                    <Border Style="{StaticResource TagBorder}"><TextBlock Text="1" Style="{StaticResource TagText}" /></Border>
+                    <TextBlock Text="{l:Tr Key=migration.before}" Style="{StaticResource SectionTitleText}" VerticalAlignment="Center" />
+                </StackPanel>
+                <TextBlock Text="{l:Tr Key=migration.beforeHint}" Style="{StaticResource CaptionText}" TextWrapping="Wrap" TextTrimming="None" />
+                <Border Style="{StaticResource CardBorder}">
+                    <StackPanel Spacing="14">
+                        <c:AdaptiveColumnsPanel MinColumnWidth="260" MaxColumns="2" Spacing="14">
+                            <CheckBox IsChecked="{x:Bind Vm.IncludePrograms, Mode=TwoWay}" AutomationProperties.AutomationId="migration.programs" AutomationProperties.Name="{l:Tr Key=migration.step.Programs}">
+                                <StackPanel Spacing="1">
+                                    <TextBlock Text="{l:Tr Key=migration.step.Programs}" FontWeight="SemiBold" FontSize="13" />
+                                    <TextBlock Text="{l:Tr Key=migration.optHint.Programs}" Style="{StaticResource CaptionText}" TextWrapping="Wrap" TextTrimming="None" />
+                                </StackPanel>
+                            </CheckBox>
+                            <CheckBox IsChecked="{x:Bind Vm.IncludeDrivers, Mode=TwoWay}" AutomationProperties.AutomationId="migration.drivers" AutomationProperties.Name="{l:Tr Key=migration.step.Drivers}">
+                                <StackPanel Spacing="1">
+                                    <TextBlock Text="{l:Tr Key=migration.step.Drivers}" FontWeight="SemiBold" FontSize="13" />
+                                    <TextBlock Text="{l:Tr Key=migration.optHint.Drivers}" Style="{StaticResource CaptionText}" TextWrapping="Wrap" TextTrimming="None" />
+                                </StackPanel>
+                            </CheckBox>
+                            <CheckBox IsChecked="{x:Bind Vm.IncludeWifi, Mode=TwoWay}" AutomationProperties.AutomationId="migration.wifi" AutomationProperties.Name="{l:Tr Key=migration.step.Wifi}">
+                                <StackPanel Spacing="1">
+                                    <TextBlock Text="{l:Tr Key=migration.step.Wifi}" FontWeight="SemiBold" FontSize="13" />
+                                    <TextBlock Text="{l:Tr Key=migration.optHint.Wifi}" Style="{StaticResource CaptionText}" TextWrapping="Wrap" TextTrimming="None" />
+                                </StackPanel>
+                            </CheckBox>
+                            <CheckBox IsChecked="{x:Bind Vm.IncludeSettings, Mode=TwoWay}" AutomationProperties.AutomationId="migration.settings" AutomationProperties.Name="{l:Tr Key=migration.step.AppSettings}">
+                                <StackPanel Spacing="1">
+                                    <TextBlock Text="{l:Tr Key=migration.step.AppSettings}" FontWeight="SemiBold" FontSize="13" />
+                                    <TextBlock Text="{l:Tr Key=migration.optHint.AppSettings}" Style="{StaticResource CaptionText}" TextWrapping="Wrap" TextTrimming="None" />
+                                </StackPanel>
+                            </CheckBox>
+                        </c:AdaptiveColumnsPanel>
+                        <Rectangle Style="{StaticResource DividerLine}" />
+                        <Grid ColumnSpacing="16">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+                                <ProgressRing IsActive="{x:Bind Vm.Busy, Mode=OneWay}" Width="16" Height="16" Visibility="{x:Bind v:ViewHelpers.Visible(Vm.Busy), Mode=OneWay}" />
+                                <TextBlock Text="{x:Bind Vm.CreateStep, Mode=OneWay}" Style="{StaticResource SecondaryText}" VerticalAlignment="Center" />
+                                <TextBlock Text="{l:Tr Key=migration.whereHint}" Style="{StaticResource CaptionText}" VerticalAlignment="Center" TextWrapping="Wrap" TextTrimming="None"
+                                           Visibility="{x:Bind v:ViewHelpers.Collapsed(Vm.Busy), Mode=OneWay}" />
+                            </StackPanel>
+                            <Button Grid.Column="1" Style="{StaticResource PrimaryButton}" Content="{l:Tr Key=migration.create}" Click="OnCreate"
+                                    AutomationProperties.AutomationId="migration.create"
+                                    IsEnabled="{x:Bind v:ViewHelpers.Not(Vm.Busy), Mode=OneWay}" />
+                        </Grid>
+                    </StackPanel>
+                </Border>
+                <Border Style="{StaticResource CardBorder}" Padding="0" Visibility="{x:Bind v:ViewHelpers.Visible(Vm.HasCreateResults), Mode=OneWay}">
+                    <ItemsRepeater ItemsSource="{x:Bind Vm.CreateResults}" ItemTemplate="{StaticResource RowTemplate}" />
+                </Border>
+            </StackPanel>
+
+            <!-- Depois de formatar -->
+            <StackPanel Spacing="8">
+                <StackPanel Orientation="Horizontal" Spacing="10">
+                    <Border Style="{StaticResource TagBorder}"><TextBlock Text="2" Style="{StaticResource TagText}" /></Border>
+                    <TextBlock Text="{l:Tr Key=migration.after}" Style="{StaticResource SectionTitleText}" VerticalAlignment="Center" />
+                </StackPanel>
+                <TextBlock Text="{l:Tr Key=migration.afterHint}" Style="{StaticResource CaptionText}" TextWrapping="Wrap" TextTrimming="None" />
+                <Border Style="{StaticResource CardBorder}">
+                    <Grid ColumnSpacing="16">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <StackPanel Spacing="2" VerticalAlignment="Center">
+                            <TextBlock Text="{x:Bind v:ViewHelpers.OrDefault(Vm.RestoreFolder, 'migration.noFolder'), Mode=OneWay}" Style="{StaticResource BodyText}" FontWeight="SemiBold"
+                                       TextTrimming="CharacterEllipsis" />
+                            <TextBlock Text="{x:Bind Vm.PackageSummary, Mode=OneWay}" Style="{StaticResource CaptionText}" Visibility="{x:Bind v:ViewHelpers.Visible(Vm.HasPackage), Mode=OneWay}" />
+                        </StackPanel>
+                        <Button Grid.Column="1" Style="{StaticResource QuietButton}" Content="{l:Tr Key=migration.open}" Click="OnOpen" AutomationProperties.AutomationId="migration.open" />
+                    </Grid>
+                </Border>
+                <Border Style="{StaticResource CardBorder}" Padding="0" Visibility="{x:Bind v:ViewHelpers.Visible(Vm.HasPackage), Mode=OneWay}">
+                    <ItemsRepeater ItemsSource="{x:Bind Vm.RestoreSteps}" ItemTemplate="{StaticResource RowTemplate}" />
+                </Border>
+                <Button Content="{l:Tr Key=migration.restoreAll}" Style="{StaticResource PrimaryButton}" Click="OnRestoreAll"
+                        Visibility="{x:Bind v:ViewHelpers.Visible(Vm.HasPackage), Mode=OneWay}"
+                        IsEnabled="{x:Bind v:ViewHelpers.Not(Vm.Busy), Mode=OneWay}" />
+                <TextBlock Text="{l:Tr Key=migration.programsNote}" Style="{StaticResource CaptionText}" TextWrapping="Wrap" TextTrimming="None"
+                           Visibility="{x:Bind v:ViewHelpers.Visible(Vm.HasPackage), Mode=OneWay}" />
+            </StackPanel>
+        </StackPanel>
+    </ScrollViewer>
+</Page>

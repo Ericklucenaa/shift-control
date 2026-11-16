@@ -1,0 +1,51 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows10.0.22621.0</TargetFramework>
+    <TargetPlatformMinVersion>10.0.19041.0</TargetPlatformMinVersion>
+    <RootNamespace>ShiftControl.App</RootNamespace>
+    <AssemblyName>ShiftControl</AssemblyName>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <ApplicationIcon>Assets\ShiftControl.ico</ApplicationIcon>
+    <Platforms>x64</Platforms>
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <UseWinUI>true</UseWinUI>
+    <EnableMsixTooling>true</EnableMsixTooling>
+    <WindowsPackageType>None</WindowsPackageType>
+    <WindowsAppSDKSelfContained>true</WindowsAppSDKSelfContained>
+    <SelfContained>false</SelfContained>
+    <DefaultLanguage>pt-BR</DefaultLanguage>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.WindowsAppSDK" />
+    <PackageReference Include="Microsoft.Windows.SDK.BuildTools" />
+    <PackageReference Include="CommunityToolkit.Mvvm" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
+    <PackageReference Include="Microsoft.Extensions.Logging" />
+    <PackageReference Include="Serilog" />
+    <PackageReference Include="Serilog.Sinks.File" />
+    <PackageReference Include="Serilog.Extensions.Logging" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\ShiftControl.Core\ShiftControl.Core.csproj" />
+    <ProjectReference Include="..\ShiftControl.Hardware\ShiftControl.Hardware.csproj" />
+    <ProjectReference Include="..\ShiftControl.Monitoring\ShiftControl.Monitoring.csproj" />
+    <ProjectReference Include="..\ShiftControl.Storage\ShiftControl.Storage.csproj" />
+    <ProjectReference Include="..\ShiftControl.Diagnostics\ShiftControl.Diagnostics.csproj" />
+    <ProjectReference Include="..\ShiftControl.Overlay\ShiftControl.Overlay.csproj" />
+    <ProjectReference Include="..\ShiftControl.Gaming\ShiftControl.Gaming.csproj" />
+    <ProjectReference Include="..\ShiftControl.Setup\ShiftControl.Setup.csproj" />
+    <ProjectReference Include="..\ShiftControl.Maintenance\ShiftControl.Maintenance.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="Strings\*.json" />
+    <Content Include="Assets\**" CopyToOutputDirectory="PreserveNewest" />
+    <!-- Intel PresentMon (MIT): medição de FPS por ETW. Baixado por tools/fetch-presentmon.ps1. -->
+    <Content Include="Tools\PresentMon.exe" CopyToOutputDirectory="PreserveNewest" Condition="Exists('Tools\PresentMon.exe')" />
+    <Content Include="Tools\PresentMon-LICENSE.txt" CopyToOutputDirectory="PreserveNewest" Condition="Exists('Tools\PresentMon-LICENSE.txt')" />
+  </ItemGroup>
+</Project>

@@ -1,0 +1,171 @@
+<Page
+    x:Class="ShiftControl.App.Views.SessionsPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:l="using:ShiftControl.App.Services"
+    xmlns:c="using:ShiftControl.App.Controls"
+    xmlns:vm="using:ShiftControl.App.ViewModels"
+    xmlns:v="using:ShiftControl.App.Views"
+    NavigationCacheMode="Required"
+    Background="Transparent">
+
+    <Grid Padding="{StaticResource PagePadding}" RowSpacing="16" MaxWidth="1600">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <Grid ColumnSpacing="16">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <StackPanel Spacing="2">
+                <TextBlock Text="{l:Tr Key=nav.group.gaming, Upper=True}" Style="{StaticResource EyebrowText}" />
+                <TextBlock Text="{l:Tr Key=nav.sessions}" Style="{StaticResource PageTitleText}" />
+                <TextBlock Text="{l:Tr Key=sessions.subtitle}" Style="{StaticResource CaptionText}" FontSize="13" TextWrapping="Wrap" TextTrimming="None" />
+            </StackPanel>
+            <ComboBox Grid.Column="1" MinWidth="220" VerticalAlignment="Bottom" ItemsSource="{x:Bind Vm.Games}"
+                      SelectedItem="{x:Bind Vm.SelectedGame, Mode=TwoWay}" AutomationProperties.Name="{l:Tr Key=sessions.game}" />
+        </Grid>
+
+        <!-- Estado vazio -->
+        <StackPanel Grid.Row="1" Spacing="8" MaxWidth="460" HorizontalAlignment="Center" VerticalAlignment="Center"
+                    Visibility="{x:Bind v:ViewHelpers.Visible(Vm.IsEmpty), Mode=OneWay}">
+            <TextBlock Text="{l:Tr Key=sessions.emptyTitle}" Style="{StaticResource SectionTitleText}" HorizontalAlignment="Center" />
+            <TextBlock Text="{l:Tr Key=sessions.emptyMessage}" Style="{StaticResource SecondaryText}" TextAlignment="Center" />
+        </StackPanel>
+
+        <Grid Grid.Row="1" ColumnSpacing="20" Visibility="{x:Bind v:ViewHelpers.Collapsed(Vm.IsEmpty), Mode=OneWay}">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="340" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+
+            <!-- Lista de sessões -->
+            <Border Style="{StaticResource CardBorder}" Padding="6">
+                <ListView ItemsSource="{x:Bind Vm.Sessions}" SelectedItem="{x:Bind Vm.SelectedSession, Mode=TwoWay}" SelectionMode="Single">
+                    <ListView.ItemTemplate>
+                        <DataTemplate x:DataType="vm:SessionItem">
+                            <Grid Padding="4,10" ColumnSpacing="12">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Spacing="2">
+                                    <TextBlock Text="{x:Bind Title}" FontWeight="SemiBold" FontSize="13" TextTrimming="CharacterEllipsis"
+                                               Foreground="{ThemeResource TextPrimaryBrush}" />
+                                    <TextBlock Style="{StaticResource CaptionText}">
+                                        <Run Text="{x:Bind When}" /><Run Text=" · " /><Run Text="{x:Bind Duration}" />
+                                    </TextBlock>
+                                </StackPanel>
+                                <StackPanel Grid.Column="1" HorizontalAlignment="Right">
+                                    <TextBlock HorizontalAlignment="Right" FontSize="15" FontWeight="SemiBold" Foreground="{ThemeResource TextPrimaryBrush}">
+                                        <Run Text="{x:Bind AvgFps}" /><Run Text=" FPS" FontSize="11" Foreground="{ThemeResource TextTertiaryBrush}" />
+                                    </TextBlock>
+                                    <TextBlock Style="{StaticResource CaptionText}" HorizontalAlignment="Right">
+                                        <Run Text="1% " /><Run Text="{x:Bind Low1}" />
+                                    </TextBlock>
+                                </StackPanel>
+                            </Grid>
+                        </DataTemplate>
+                    </ListView.ItemTemplate>
+                </ListView>
+            </Border>
+
+            <!-- Detalhe e comparação -->
+            <ScrollViewer Grid.Column="1" VerticalScrollBarVisibility="Auto" Visibility="{x:Bind v:ViewHelpers.Visible(Vm.HasSelection), Mode=OneWay}">
+                <StackPanel Spacing="16">
+                    <Grid>
+                        <StackPanel Spacing="2">
+                            <TextBlock Text="{x:Bind Vm.DetailTitle, Mode=OneWay}" Style="{StaticResource SectionTitleText}" FontSize="18" />
+                            <TextBlock Text="{x:Bind Vm.DetailSubtitle, Mode=OneWay}" Style="{StaticResource CaptionText}" TextWrapping="Wrap" TextTrimming="None" />
+                        </StackPanel>
+                        <Button Style="{StaticResource QuietButton}" HorizontalAlignment="Right" VerticalAlignment="Top"
+                                Content="{l:Tr Key=sessions.delete}" Click="OnDelete" />
+                    </Grid>
+
+                    <ItemsRepeater ItemsSource="{x:Bind Vm.Details}">
+                        <ItemsRepeater.Layout>
+                            <UniformGridLayout MinItemWidth="150" MinColumnSpacing="12" MinRowSpacing="12" ItemsStretch="Fill" />
+                        </ItemsRepeater.Layout>
+                        <ItemsRepeater.ItemTemplate>
+                            <DataTemplate x:DataType="vm:MetricText">
+                                <Border Style="{StaticResource CardBorder}" Padding="14,12">
+                                    <StackPanel Spacing="2">
+                                        <TextBlock Text="{x:Bind Hint}" Style="{StaticResource EyebrowText}" TextTrimming="CharacterEllipsis" />
+                                        <TextBlock Text="{x:Bind Text}" FontSize="18" FontWeight="SemiBold" Foreground="{ThemeResource TextPrimaryBrush}" />
+                                    </StackPanel>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsRepeater.ItemTemplate>
+                    </ItemsRepeater>
+
+                    <Border Style="{StaticResource CardBorder}">
+                        <StackPanel Spacing="10">
+                            <Grid>
+                                <TextBlock Text="{l:Tr Key=sessions.timeline}" Style="{StaticResource SectionTitleText}" FontSize="14" />
+                                <StackPanel Orientation="Horizontal" Spacing="14" HorizontalAlignment="Right">
+                                    <StackPanel Orientation="Horizontal" Spacing="6">
+                                        <Rectangle Width="10" Height="2" Fill="{ThemeResource AccentBrush}" VerticalAlignment="Center" />
+                                        <TextBlock Text="{x:Bind Vm.FpsLegend, Mode=OneWay}" Style="{StaticResource CaptionText}" />
+                                    </StackPanel>
+                                    <StackPanel Orientation="Horizontal" Spacing="6" Visibility="{x:Bind v:ViewHelpers.Visible(Vm.HasBaseline), Mode=OneWay}">
+                                        <Rectangle Width="10" Height="2" Fill="{ThemeResource SecondarySeriesBrush}" VerticalAlignment="Center" />
+                                        <TextBlock Text="{x:Bind Vm.BaselineLegend, Mode=OneWay}" Style="{StaticResource CaptionText}" />
+                                    </StackPanel>
+                                </StackPanel>
+                            </Grid>
+                            <c:LineChart Height="220" Values="{x:Bind Vm.FpsSeries, Mode=OneWay}" SecondaryValues="{x:Bind Vm.BaselineSeries, Mode=OneWay}"
+                                         Minimum="0" Formatter="{x:Bind Vm.FpsFormatter}" PrimaryLabel="{l:Tr Key=sessions.thisSession}"
+                                         SecondaryLabel="{l:Tr Key=sessions.baseline}"
+                                         Stroke="{ThemeResource AccentBrush}" AreaFill="{ThemeResource AccentAreaBrush}"
+                                         SecondaryStroke="{ThemeResource SecondarySeriesBrush}" GridStroke="{ThemeResource GridLineBrush}"
+                                         LabelForeground="{ThemeResource TextTertiaryBrush}"
+                                         TooltipBackground="{ThemeResource RaisedBackgroundBrush}" TooltipBorder="{ThemeResource CardBorderBrush}" />
+                            <TextBlock Text="{l:Tr Key=sessions.timelineHint}" Style="{StaticResource CaptionText}" />
+                        </StackPanel>
+                    </Border>
+
+                    <Border Style="{StaticResource CardBorder}">
+                        <StackPanel Spacing="10">
+                            <Grid ColumnSpacing="12">
+                                <TextBlock Text="{l:Tr Key=sessions.compare}" Style="{StaticResource SectionTitleText}" FontSize="14" VerticalAlignment="Center" />
+                                <ComboBox HorizontalAlignment="Right" MinWidth="240" ItemsSource="{x:Bind Vm.Baselines}"
+                                          SelectedItem="{x:Bind Vm.Baseline, Mode=TwoWay}" PlaceholderText="{l:Tr Key=sessions.noBaseline}"
+                                          AutomationProperties.Name="{l:Tr Key=sessions.compare}" />
+                            </Grid>
+                            <TextBlock Text="{x:Bind Vm.Summary, Mode=OneWay}" Style="{StaticResource BodyText}" FontWeight="SemiBold"
+                                       Visibility="{x:Bind v:ViewHelpers.VisibleIfText(Vm.Summary), Mode=OneWay}" />
+                            <TextBlock Text="{l:Tr Key=sessions.noBaselineHint}" Style="{StaticResource SecondaryText}"
+                                       Visibility="{x:Bind v:ViewHelpers.Collapsed(Vm.HasBaseline), Mode=OneWay}" />
+                            <ItemsRepeater ItemsSource="{x:Bind Vm.Comparison}" Visibility="{x:Bind v:ViewHelpers.Visible(Vm.HasBaseline), Mode=OneWay}">
+                                <ItemsRepeater.Layout>
+                                    <StackLayout Spacing="2" />
+                                </ItemsRepeater.Layout>
+                                <ItemsRepeater.ItemTemplate>
+                                    <DataTemplate x:DataType="vm:ComparisonRow">
+                                        <Grid ColumnSpacing="12" Padding="0,6">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="110" />
+                                                <ColumnDefinition Width="110" />
+                                                <ColumnDefinition Width="80" />
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock Text="{x:Bind Label}" Style="{StaticResource MetricLabelText}" />
+                                            <TextBlock Grid.Column="1" Text="{x:Bind Current}" Style="{StaticResource MetricValueText}" />
+                                            <TextBlock Grid.Column="2" Text="{x:Bind Baseline}" Style="{StaticResource MetricValueText}"
+                                                       Foreground="{ThemeResource TextSecondaryBrush}" FontWeight="Normal" />
+                                            <TextBlock Grid.Column="3" Text="{x:Bind Delta}" Style="{StaticResource MetricValueText}"
+                                                       Foreground="{x:Bind v:SessionsPage.DeltaBrush(Better)}" />
+                                        </Grid>
+                                    </DataTemplate>
+                                </ItemsRepeater.ItemTemplate>
+                            </ItemsRepeater>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+            </ScrollViewer>
+        </Grid>
+    </Grid>
+</Page>

@@ -1,0 +1,21 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "build",
+      "type": "process",
+      "command": "dotnet",
+      "args": ["build", "${workspaceFolder}/src/ShiftControl.App/ShiftControl.App.csproj"],
+      "group": { "kind": "build", "isDefault": true },
+      "problemMatcher": "$msCompile"
+    },
+    {
+      "label": "test",
+      "type": "process",
+      "command": "dotnet",
+      "args": ["test", "--project", "${workspaceFolder}/tests/ShiftControl.Tests"],
+      "group": "test",
+      "problemMatcher": "$msCompile"
+    }
+  ]
+}

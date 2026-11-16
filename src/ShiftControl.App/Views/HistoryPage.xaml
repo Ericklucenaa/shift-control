@@ -1,0 +1,112 @@
+<Page
+    x:Class="ShiftControl.App.Views.HistoryPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:l="using:ShiftControl.App.Services"
+    xmlns:c="using:ShiftControl.App.Controls"
+    xmlns:vm="using:ShiftControl.App.ViewModels"
+    xmlns:v="using:ShiftControl.App.Views"
+    NavigationCacheMode="Required"
+    Background="Transparent">
+
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <StackPanel Padding="{StaticResource PagePadding}" Spacing="20" MaxWidth="1680">
+            <StackPanel Spacing="2">
+                <TextBlock Text="{l:Tr Key=nav.group.dashboard, Upper=True}" Style="{StaticResource EyebrowText}" />
+                <TextBlock Text="{l:Tr Key=nav.history}" Style="{StaticResource PageTitleText}" />
+                <TextBlock Text="{l:Tr Key=history.subtitle}" Style="{StaticResource CaptionText}" FontSize="13" />
+            </StackPanel>
+
+            <InfoBar Severity="Warning" IsOpen="{x:Bind Vm.RecordingDisabled, Mode=OneWay}" IsClosable="False"
+                     Title="{l:Tr Key=history.disabledTitle}" Message="{l:Tr Key=history.disabledMessage}" />
+
+            <!-- Filtros -->
+            <Grid ColumnSpacing="16" RowSpacing="12">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <ComboBox MinWidth="240" ItemsSource="{x:Bind Vm.Metrics}" SelectedItem="{x:Bind Vm.SelectedMetric, Mode=TwoWay}"
+                          Header="{l:Tr Key=history.metric}" />
+                <StackPanel Grid.Column="1" Spacing="6" HorizontalAlignment="Right" VerticalAlignment="Bottom">
+                    <Border Background="{ThemeResource CardBackgroundBrush}" BorderBrush="{ThemeResource CardBorderBrush}"
+                            BorderThickness="1" CornerRadius="6" Padding="3">
+                        <ItemsRepeater x:Name="PeriodList" ItemsSource="{x:Bind Vm.Periods}">
+                            <ItemsRepeater.Layout>
+                                <StackLayout Orientation="Horizontal" Spacing="2" />
+                            </ItemsRepeater.Layout>
+                            <ItemsRepeater.ItemTemplate>
+                                <DataTemplate x:DataType="vm:PeriodOption">
+                                    <RadioButton Style="{StaticResource SegmentRadio}" GroupName="period" Content="{x:Bind Label}"
+                                                 Tag="{x:Bind Key}" Checked="OnPeriodChecked" Loaded="OnPeriodLoaded" />
+                                </DataTemplate>
+                            </ItemsRepeater.ItemTemplate>
+                        </ItemsRepeater>
+                    </Border>
+                </StackPanel>
+            </Grid>
+
+            <!-- Gráfico -->
+            <Border Style="{StaticResource CardBorder}">
+                <Grid RowSpacing="8">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="340" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+                    <c:LineChart Values="{x:Bind Vm.Avg, Mode=OneWay}" BandMin="{x:Bind Vm.Min, Mode=OneWay}" BandMax="{x:Bind Vm.Max, Mode=OneWay}"
+                                 Times="{x:Bind Vm.Times, Mode=OneWay}" Minimum="0" Maximum="{x:Bind Vm.ChartMaximum, Mode=OneWay}"
+                                 Formatter="{x:Bind Vm.Formatter, Mode=OneWay}" BinaryScale="{x:Bind Vm.BinaryScale, Mode=OneWay}"
+                                 Stroke="{ThemeResource AccentBrush}" AreaFill="{ThemeResource AccentAreaBrush}"
+                                 GridStroke="{ThemeResource GridLineBrush}" LabelForeground="{ThemeResource TextTertiaryBrush}"
+                                 TooltipBackground="{ThemeResource RaisedBackgroundBrush}" TooltipBorder="{ThemeResource CardBorderBrush}"
+                                 Visibility="{x:Bind v:ViewHelpers.Collapsed(Vm.IsEmpty), Mode=OneWay}" />
+
+                    <StackPanel Spacing="6" HorizontalAlignment="Center" VerticalAlignment="Center" MaxWidth="440"
+                                Visibility="{x:Bind v:ViewHelpers.Visible(Vm.IsEmpty), Mode=OneWay}">
+                        <TextBlock Text="{l:Tr Key=history.emptyTitle}" Style="{StaticResource SectionTitleText}" HorizontalAlignment="Center" />
+                        <TextBlock Text="{l:Tr Key=history.emptyMessage}" Style="{StaticResource SecondaryText}" TextAlignment="Center" />
+                    </StackPanel>
+                    <StackPanel Spacing="6" HorizontalAlignment="Center" VerticalAlignment="Center"
+                                Visibility="{x:Bind v:ViewHelpers.Visible(Vm.HasError), Mode=OneWay}">
+                        <TextBlock Text="{l:Tr Key=history.error}" Style="{StaticResource SecondaryText}" />
+                    </StackPanel>
+                    <ProgressRing IsActive="{x:Bind Vm.IsLoading, Mode=OneWay}" Width="24" Height="24" />
+
+                    <Grid Grid.Row="1" Visibility="{x:Bind v:ViewHelpers.Collapsed(Vm.IsEmpty), Mode=OneWay}">
+                        <TextBlock Text="{x:Bind Vm.StartText, Mode=OneWay}" Style="{StaticResource CaptionText}" />
+                        <TextBlock Text="{x:Bind Vm.CoverageText, Mode=OneWay}" Style="{StaticResource CaptionText}" HorizontalAlignment="Center" />
+                        <TextBlock Text="{x:Bind Vm.EndText, Mode=OneWay}" Style="{StaticResource CaptionText}" HorizontalAlignment="Right" />
+                    </Grid>
+                </Grid>
+            </Border>
+
+            <!-- Resumo do período -->
+            <c:AdaptiveColumnsPanel MinColumnWidth="180" MaxColumns="4" Spacing="16">
+                <Border Style="{StaticResource CardBorder}">
+                    <StackPanel Spacing="4">
+                        <TextBlock Text="{l:Tr Key=history.min, Upper=True}" Style="{StaticResource EyebrowText}" />
+                        <TextBlock Text="{x:Bind Vm.MinText, Mode=OneWay}" Style="{StaticResource HeroValueText}" FontSize="24" LineHeight="30" />
+                    </StackPanel>
+                </Border>
+                <Border Style="{StaticResource CardBorder}">
+                    <StackPanel Spacing="4">
+                        <TextBlock Text="{l:Tr Key=history.avg, Upper=True}" Style="{StaticResource EyebrowText}" />
+                        <TextBlock Text="{x:Bind Vm.AvgText, Mode=OneWay}" Style="{StaticResource HeroValueText}" FontSize="24" LineHeight="30" />
+                    </StackPanel>
+                </Border>
+                <Border Style="{StaticResource CardBorder}">
+                    <StackPanel Spacing="4">
+                        <TextBlock Text="{l:Tr Key=history.max, Upper=True}" Style="{StaticResource EyebrowText}" />
+                        <TextBlock Text="{x:Bind Vm.MaxText, Mode=OneWay}" Style="{StaticResource HeroValueText}" FontSize="24" LineHeight="30" />
+                    </StackPanel>
+                </Border>
+                <Border Style="{StaticResource CardBorder}">
+                    <StackPanel Spacing="4">
+                        <TextBlock Text="{l:Tr Key=history.points, Upper=True}" Style="{StaticResource EyebrowText}" />
+                        <TextBlock Text="{x:Bind Vm.PointsText, Mode=OneWay}" Style="{StaticResource HeroValueText}" FontSize="24" LineHeight="30" />
+                    </StackPanel>
+                </Border>
+            </c:AdaptiveColumnsPanel>
+        </StackPanel>
+    </ScrollViewer>
+</Page>

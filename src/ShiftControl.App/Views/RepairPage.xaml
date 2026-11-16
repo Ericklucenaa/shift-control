@@ -1,0 +1,87 @@
+<Page
+    x:Class="ShiftControl.App.Views.RepairPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:l="using:ShiftControl.App.Services"
+    xmlns:v="using:ShiftControl.App.Views"
+    xmlns:c="using:ShiftControl.App.Controls"
+    NavigationCacheMode="Required"
+    Background="Transparent">
+
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <StackPanel Padding="{StaticResource PagePadding}" Spacing="20" MaxWidth="1100" HorizontalAlignment="Left">
+            <StackPanel Spacing="2">
+                <TextBlock Text="{l:Tr Key=nav.group.maintenance, Upper=True}" Style="{StaticResource EyebrowText}" />
+                <TextBlock Text="{l:Tr Key=nav.repair}" Style="{StaticResource PageTitleText}" />
+                <TextBlock Text="{l:Tr Key=repair.subtitle}" Style="{StaticResource CaptionText}" FontSize="13" TextWrapping="Wrap" TextTrimming="None" />
+            </StackPanel>
+
+            <InfoBar IsOpen="{x:Bind v:ViewHelpers.HasText(Vm.Message), Mode=OneWay}" IsClosable="True" Message="{x:Bind Vm.Message, Mode=OneWay}"
+                     Severity="{x:Bind v:SettingsPage.StatusSeverity(Vm.MessageIsError), Mode=OneWay}" />
+            <c:AdminNotice Text="{l:Tr Key=repair.adminNotice}" />
+
+            <!-- Ferramentas -->
+            <StackPanel Spacing="8">
+                <TextBlock Text="{l:Tr Key=repair.tools}" Style="{StaticResource SectionTitleText}" />
+                <TextBlock Text="{l:Tr Key=repair.toolsHint}" Style="{StaticResource CaptionText}" TextWrapping="Wrap" TextTrimming="None" />
+                <Border Style="{StaticResource CardBorder}" Padding="0">
+                    <ItemsRepeater ItemsSource="{x:Bind Vm.Tools}" ItemTemplate="{StaticResource RowTemplate}" />
+                </Border>
+                <Grid Visibility="{x:Bind v:ViewHelpers.Visible(Vm.HasOutput), Mode=OneWay}" RowSpacing="6">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+                    <Grid>
+                        <TextBlock Text="{l:Tr Key=repair.output}" Style="{StaticResource MetricLabelText}" VerticalAlignment="Center" />
+                        <Button Style="{StaticResource QuietButton}" Padding="10,3" FontSize="12" HorizontalAlignment="Right" Content="{l:Tr Key=common.cancel}"
+                                Command="{x:Bind Vm.CancelCommand}" Visibility="{x:Bind v:ViewHelpers.Visible(Vm.Running), Mode=OneWay}" />
+                    </Grid>
+                    <TextBox x:Name="OutputBox" Grid.Row="1" Text="{x:Bind Vm.Output, Mode=OneWay}" IsReadOnly="True" AcceptsReturn="True" TextWrapping="NoWrap"
+                             Height="220" FontFamily="Consolas" FontSize="12" TextChanged="OnOutputChanged"
+                             ScrollViewer.VerticalScrollBarVisibility="Auto" ScrollViewer.HorizontalScrollBarVisibility="Auto" />
+                </Grid>
+            </StackPanel>
+
+            <!-- Histórico de erros -->
+            <StackPanel Spacing="8">
+                <Grid ColumnSpacing="12">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <StackPanel Spacing="2">
+                        <TextBlock Text="{l:Tr Key=errors.title}" Style="{StaticResource SectionTitleText}" />
+                        <TextBlock Text="{l:Tr Key=errors.hint}" Style="{StaticResource CaptionText}" TextWrapping="Wrap" TextTrimming="None" />
+                    </StackPanel>
+                    <ComboBox Grid.Column="1" VerticalAlignment="Bottom" MinWidth="150" SelectedIndex="{x:Bind Vm.PeriodIndex, Mode=TwoWay}"
+                              AutomationProperties.Name="{l:Tr Key=errors.period}">
+                        <ComboBoxItem Content="{l:Tr Key=errors.days7}" />
+                        <ComboBoxItem Content="{l:Tr Key=errors.days30}" />
+                        <ComboBoxItem Content="{l:Tr Key=errors.days90}" />
+                    </ComboBox>
+                </Grid>
+                <Border Style="{StaticResource CardBorder}">
+                    <ItemsRepeater ItemsSource="{x:Bind Vm.ErrorCounts}" ItemTemplate="{StaticResource StatTemplate}">
+                        <ItemsRepeater.Layout>
+                            <UniformGridLayout MinItemWidth="130" MinColumnSpacing="16" MinRowSpacing="12" ItemsStretch="Fill" />
+                        </ItemsRepeater.Layout>
+                    </ItemsRepeater>
+                </Border>
+                <Border Style="{StaticResource CardBorder}" Padding="0">
+                    <Grid>
+                        <ItemsRepeater ItemsSource="{x:Bind Vm.Errors}" ItemTemplate="{StaticResource RowTemplate}" />
+                        <StackPanel Orientation="Horizontal" Spacing="10" Margin="16,14" Visibility="{x:Bind v:ViewHelpers.Visible(Vm.LoadingErrors), Mode=OneWay}">
+                            <ProgressRing IsActive="True" Width="14" Height="14" />
+                            <TextBlock Text="{l:Tr Key=errors.loading}" Style="{StaticResource SecondaryText}" />
+                        </StackPanel>
+                        <StackPanel Spacing="4" Padding="16,14" Visibility="{x:Bind v:ViewHelpers.Visible(Vm.NoErrors), Mode=OneWay}">
+                            <TextBlock Text="{l:Tr Key=errors.emptyTitle}" Style="{StaticResource BodyText}" FontWeight="SemiBold" />
+                            <TextBlock Text="{l:Tr Key=errors.emptyMessage}" Style="{StaticResource SecondaryText}" TextWrapping="Wrap" />
+                        </StackPanel>
+                    </Grid>
+                </Border>
+            </StackPanel>
+        </StackPanel>
+    </ScrollViewer>
+</Page>

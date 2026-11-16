@@ -1,0 +1,50 @@
+{
+  "categories": ["Runtimes", "Navegadores", "Jogos", "Comunicação", "Hardware", "Utilitários", "Mídia", "Desenvolvimento"],
+  "profiles": [
+    { "key": "gamer", "name": "Gamer" },
+    { "key": "dev", "name": "Desenvolvedor" },
+    { "key": "work", "name": "Trabalho" }
+  ],
+  "packages": [
+    { "id": "Microsoft.VCRedist.2015+.x64", "name": "Visual C++ 2015–2022 (x64)", "category": "Runtimes", "detect": ["Microsoft Visual C++ 2015-2022 Redistributable (x64)", "Microsoft Visual C++ v14 Redistributable (x64)"], "profiles": ["gamer", "dev", "work"], "description": "Necessário para a maioria dos jogos e programas." },
+    { "id": "Microsoft.VCRedist.2015+.x86", "name": "Visual C++ 2015–2022 (x86)", "category": "Runtimes", "detect": ["Microsoft Visual C++ 2015-2022 Redistributable (x86)", "Microsoft Visual C++ v14 Redistributable (x86)"], "profiles": ["gamer", "dev", "work"], "description": "Versão 32 bits, usada por jogos e launchers mais antigos." },
+    { "id": "Microsoft.DirectX", "name": "DirectX End-User Runtime", "category": "Runtimes", "detect": [], "profiles": ["gamer"], "description": "Bibliotecas antigas do DirectX 9–11 que muitos jogos ainda pedem.", "noDetect": true },
+    { "id": "Microsoft.DotNet.DesktopRuntime.8", "name": ".NET Desktop Runtime 8", "category": "Runtimes", "detect": ["Microsoft Windows Desktop Runtime - 8."], "profiles": ["gamer", "dev", "work"], "description": "Base de vários programas e launchers." },
+    { "id": "Microsoft.EdgeWebView2Runtime", "name": "WebView2 Runtime", "category": "Runtimes", "detect": ["Microsoft Edge WebView2 Runtime"], "detectRegistry": ["HKEY_LOCAL_MACHINE\\SOFTWARE\\WOW6432Node\\Microsoft\\EdgeUpdate\\Clients\\{F3017226-FE2A-4295-8BDF-00C3A9A7E4C5}", "HKEY_CURRENT_USER\\Software\\Microsoft\\EdgeUpdate\\Clients\\{F3017226-FE2A-4295-8BDF-00C3A9A7E4C5}"], "selfUpdating": true, "profiles": ["gamer", "dev", "work"], "description": "Usado por apps como Teams, launchers e o próprio Shift." },
+
+    { "id": "Google.Chrome", "name": "Google Chrome", "category": "Navegadores", "detect": ["Google Chrome"], "profiles": ["gamer", "dev", "work"], "selfUpdating": true },
+    { "id": "Opera.OperaGX", "name": "Opera GX", "category": "Navegadores", "detect": ["Opera GX"], "profiles": [], "selfUpdating": true },
+    { "id": "Mozilla.Firefox", "name": "Firefox", "category": "Navegadores", "detect": ["Mozilla Firefox"], "profiles": [], "selfUpdating": true },
+
+    { "id": "Valve.Steam", "name": "Steam", "category": "Jogos", "detect": ["Steam"], "profiles": ["gamer"], "selfUpdating": true },
+    { "id": "EpicGames.EpicGamesLauncher", "name": "Epic Games Launcher", "category": "Jogos", "detect": ["Epic Games Launcher"], "profiles": ["gamer"], "selfUpdating": true },
+    { "id": "ElectronicArts.EADesktop", "name": "EA app", "category": "Jogos", "detect": ["EA app"], "profiles": ["gamer"], "selfUpdating": true },
+    { "id": "Blizzard.BattleNet", "name": "Battle.net", "category": "Jogos", "detect": ["Battle.net"], "profiles": [], "selfUpdating": true },
+    { "id": "Ubisoft.Connect", "name": "Ubisoft Connect", "category": "Jogos", "detect": ["Ubisoft Connect"], "profiles": [], "selfUpdating": true },
+
+    { "id": "Discord.Discord", "name": "Discord", "category": "Comunicação", "detect": ["Discord"], "profiles": ["gamer"], "selfUpdating": true },
+    { "id": "Microsoft.Teams", "name": "Microsoft Teams", "category": "Comunicação", "detect": ["Microsoft Teams"], "profiles": ["work"], "selfUpdating": true },
+    { "id": "Zoom.Zoom", "name": "Zoom", "category": "Comunicação", "detect": ["Zoom Workplace", "Zoom"], "profiles": [], "selfUpdating": true },
+
+    { "id": "XP8CLZL93F5Z4P", "name": "NVIDIA App", "category": "Hardware", "source": "msstore", "detect": ["NVIDIA App", "NVIDIA app"], "profiles": ["gamer"], "requires": "nvidia", "description": "Drivers e recursos das placas NVIDIA (pela Microsoft Store)." },
+    { "id": "IObit.DriverBooster", "name": "Driver Booster", "category": "Hardware", "detect": ["Driver Booster"], "profiles": [], "note": "Instala drivers de catálogos próprios e oferece outros programas durante a instalação. O Driver Center do Shift Control usa só fontes oficiais." },
+    { "id": "CPUID.CPU-Z", "name": "CPU-Z", "category": "Hardware", "detect": ["CPUID CPU-Z"], "profiles": [] },
+
+    { "id": "RARLab.WinRAR", "name": "WinRAR", "category": "Utilitários", "detect": ["WinRAR"], "profiles": ["work"] },
+    { "id": "7zip.7zip", "name": "7-Zip", "category": "Utilitários", "detect": ["7-Zip"], "profiles": ["gamer", "dev"] },
+    { "id": "Skillbrains.Lightshot", "name": "Lightshot", "category": "Utilitários", "detect": ["Lightshot"], "profiles": ["gamer", "work"] },
+    { "id": "Microsoft.PowerToys", "name": "PowerToys", "category": "Utilitários", "detect": ["PowerToys"], "profiles": ["dev"] },
+    { "id": "voidtools.Everything", "name": "Everything", "category": "Utilitários", "detect": ["Everything"], "profiles": ["dev"] },
+    { "id": "Adobe.Acrobat.Reader.64-bit", "name": "Adobe Acrobat Reader", "category": "Utilitários", "detect": ["Adobe Acrobat"], "profiles": ["work"], "selfUpdating": true },
+
+    { "id": "VideoLAN.VLC", "name": "VLC", "category": "Mídia", "detect": ["VLC media player"], "profiles": ["gamer", "work"] },
+    { "id": "OBSProject.OBSStudio", "name": "OBS Studio", "category": "Mídia", "detect": ["OBS Studio"], "profiles": ["gamer"] },
+    { "id": "Spotify.Spotify", "name": "Spotify", "category": "Mídia", "detect": ["Spotify"], "profiles": [], "selfUpdating": true },
+
+    { "id": "Microsoft.VisualStudioCode", "name": "Visual Studio Code", "category": "Desenvolvimento", "detect": ["Microsoft Visual Studio Code"], "profiles": ["dev"], "selfUpdating": true },
+    { "id": "Git.Git", "name": "Git", "category": "Desenvolvimento", "detect": ["Git"], "profiles": ["dev"] },
+    { "id": "Python.Python.3.13", "name": "Python 3.13", "category": "Desenvolvimento", "detect": ["Python 3."], "profiles": ["dev"] },
+    { "id": "OpenJS.NodeJS.LTS", "name": "Node.js LTS", "category": "Desenvolvimento", "detect": ["Node.js"], "profiles": ["dev"] },
+    { "id": "Microsoft.WindowsTerminal", "name": "Windows Terminal", "category": "Desenvolvimento", "detect": ["Windows Terminal"], "profiles": ["dev"] }
+  ]
+}

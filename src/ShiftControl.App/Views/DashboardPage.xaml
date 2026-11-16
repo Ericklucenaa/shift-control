@@ -1,0 +1,352 @@
+<Page
+    x:Class="ShiftControl.App.Views.DashboardPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:l="using:ShiftControl.App.Services"
+    xmlns:c="using:ShiftControl.App.Controls"
+    xmlns:vm="using:ShiftControl.App.ViewModels"
+    xmlns:v="using:ShiftControl.App.Views"
+    NavigationCacheMode="Required"
+    Background="Transparent">
+
+    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+        <VisualStateManager.VisualStateGroups>
+            <VisualStateGroup>
+                <VisualState x:Name="HeaderWide">
+                    <VisualState.StateTriggers>
+                        <AdaptiveTrigger MinWindowWidth="1100" />
+                    </VisualState.StateTriggers>
+                </VisualState>
+                <VisualState x:Name="HeaderNarrow">
+                    <VisualState.StateTriggers>
+                        <AdaptiveTrigger MinWindowWidth="0" />
+                    </VisualState.StateTriggers>
+                    <VisualState.Setters>
+                        <Setter Target="StatusPanel.(Grid.Column)" Value="0" />
+                        <Setter Target="StatusPanel.(Grid.Row)" Value="1" />
+                        <Setter Target="StatusPanel.HorizontalAlignment" Value="Left" />
+                    </VisualState.Setters>
+                </VisualState>
+            </VisualStateGroup>
+        </VisualStateManager.VisualStateGroups>
+        <StackPanel Padding="{StaticResource PagePadding}" Spacing="20" MaxWidth="1680">
+
+            <!-- Cabeçalho: identidade do PC + estado geral -->
+            <Grid ColumnSpacing="24" RowSpacing="16">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+
+                <StackPanel Spacing="2">
+                    <TextBlock Text="{l:Tr Key=dashboard.eyebrow, Upper=True}" Style="{StaticResource EyebrowText}" />
+                    <TextBlock Text="{x:Bind Vm.ComputerName, Mode=OneWay}" Style="{StaticResource PageTitleText}" />
+                    <TextBlock Style="{StaticResource CaptionText}" FontSize="13" Margin="0,2,0,0" TextWrapping="Wrap" TextTrimming="None">
+                        <Run Text="{x:Bind Vm.SystemLine, Mode=OneWay}" /><Run Text="  ·  " /><Run Text="{x:Bind Vm.UptimeText, Mode=OneWay}" />
+                    </TextBlock>
+                </StackPanel>
+
+                <StackPanel x:Name="StatusPanel" Grid.Column="1" Orientation="Horizontal" Spacing="16"
+                            VerticalAlignment="Center" HorizontalAlignment="Right">
+                    <StackPanel Spacing="3" VerticalAlignment="Center">
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <Ellipse Width="8" Height="8" VerticalAlignment="Center"
+                                     Fill="{x:Bind HealthBrush(Vm.LastAnalysisLevel), Mode=OneWay}" />
+                            <TextBlock Text="{x:Bind Vm.HealthText, Mode=OneWay}" FontWeight="SemiBold" FontSize="13"
+                                       Foreground="{ThemeResource TextPrimaryBrush}" />
+                        </StackPanel>
+                        <TextBlock Text="{x:Bind Vm.LastAnalysisText, Mode=OneWay}" Style="{StaticResource CaptionText}" Margin="16,0,0,0" />
+                    </StackPanel>
+                    <Button Style="{StaticResource PrimaryButton}" Command="{x:Bind Vm.RunDiagnosticsCommand}"
+                            ToolTipService.ToolTip="{l:Tr Key=dashboard.runDiagnosticsTip}">
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <FontIcon Glyph="&#xE9D9;" FontSize="14" />
+                            <TextBlock Text="{l:Tr Key=dashboard.runDiagnostics}" />
+                        </StackPanel>
+                    </Button>
+                </StackPanel>
+            </Grid>
+
+            <!-- Avisos de permissão: explicam por que algumas leituras estão indisponíveis -->
+            <InfoBar Severity="Informational" IsOpen="{x:Bind v:ViewHelpers.Not(Vm.IsElevated), Mode=OneWay}"
+                     Title="{l:Tr Key=dashboard.adminTitle}" Message="{l:Tr Key=dashboard.adminMessage}">
+                <InfoBar.ActionButton>
+                    <Button Content="{l:Tr Key=dashboard.restartAdmin}" Command="{x:Bind Vm.RestartAsAdminCommand}" />
+                </InfoBar.ActionButton>
+            </InfoBar>
+            <InfoBar Severity="Informational" IsOpen="{x:Bind Vm.DriverMissing, Mode=OneWay}"
+                     Title="{l:Tr Key=dashboard.driverTitle}" Message="{l:Tr Key=dashboard.driverMessage}">
+                <InfoBar.ActionButton>
+                    <Button Content="{l:Tr Key=dashboard.driverLink}" Command="{x:Bind Vm.OpenDriverSiteCommand}" />
+                </InfoBar.ActionButton>
+            </InfoBar>
+
+            <!-- Resultado do diagnóstico -->
+            <Border Style="{StaticResource CardBorder}" Visibility="{x:Bind v:ViewHelpers.Visible(Vm.HasReport), Mode=OneWay}">
+                <StackPanel Spacing="12">
+                    <Grid>
+                        <StackPanel Spacing="2">
+                            <TextBlock Text="{l:Tr Key=diagnostics.title}" Style="{StaticResource SectionTitleText}" />
+                            <TextBlock Text="{x:Bind Vm.ReportSummary, Mode=OneWay}" Style="{StaticResource SecondaryText}" />
+                        </StackPanel>
+                        <Button Style="{StaticResource IconButton}" HorizontalAlignment="Right" VerticalAlignment="Top"
+                                Command="{x:Bind Vm.CloseReportCommand}" ToolTipService.ToolTip="{l:Tr Key=common.close}"
+                                AutomationProperties.Name="{l:Tr Key=common.close}">
+                            <FontIcon Glyph="&#xE711;" FontSize="12" />
+                        </Button>
+                    </Grid>
+                    <ItemsRepeater ItemsSource="{x:Bind Vm.Findings}">
+                        <ItemsRepeater.Layout>
+                            <StackLayout Spacing="8" />
+                        </ItemsRepeater.Layout>
+                        <ItemsRepeater.ItemTemplate>
+                            <DataTemplate x:DataType="vm:FindingItem">
+                                <Grid ColumnSpacing="12" Padding="12,10" CornerRadius="6"
+                                      Background="{ThemeResource RaisedBackgroundBrush}">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <FontIcon Glyph="{x:Bind v:ViewHelpers.SeverityGlyph(Severity)}" FontSize="16" VerticalAlignment="Top" Margin="0,2,0,0" />
+                                    <StackPanel Grid.Column="1" Spacing="2">
+                                        <TextBlock Text="{x:Bind Title}" FontWeight="SemiBold" Style="{StaticResource BodyText}" />
+                                        <TextBlock Text="{x:Bind Detail}" Style="{StaticResource SecondaryText}" />
+                                    </StackPanel>
+                                </Grid>
+                            </DataTemplate>
+                        </ItemsRepeater.ItemTemplate>
+                    </ItemsRepeater>
+                </StackPanel>
+            </Border>
+
+            <!-- Carregando: o LibreHardwareMonitor leva ~1 s para abrir -->
+            <StackPanel Orientation="Horizontal" Spacing="12" Visibility="{x:Bind v:ViewHelpers.Collapsed(Vm.HasData), Mode=OneWay}">
+                <ProgressRing IsActive="True" Width="18" Height="18" />
+                <TextBlock Text="{l:Tr Key=dashboard.loading}" Style="{StaticResource SecondaryText}" VerticalAlignment="Center" />
+            </StackPanel>
+
+            <!-- Componentes -->
+            <c:AdaptiveColumnsPanel MinColumnWidth="264" MaxColumns="4" Spacing="16"
+                                    Visibility="{x:Bind v:ViewHelpers.Visible(Vm.HasData), Mode=OneWay}">
+
+                <!-- CPU -->
+                <Border Style="{StaticResource CardBorder}">
+                    <StackPanel Spacing="14">
+                        <StackPanel Spacing="3">
+                            <TextBlock Text="{l:Tr Key=cpu.eyebrow, Upper=True}" Style="{StaticResource EyebrowText}" />
+                            <TextBlock Text="{x:Bind Vm.Cpu.Name, Mode=OneWay}" Style="{StaticResource CardTitleText}"
+                                       ToolTipService.ToolTip="{x:Bind Vm.Cpu.Name, Mode=OneWay}" />
+                        </StackPanel>
+                        <StackPanel Spacing="8">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="{x:Bind Vm.Cpu.LoadText, Mode=OneWay}" Style="{StaticResource HeroValueText}" />
+                                <TextBlock Text="{l:Tr Key=common.percentInUse}" Style="{StaticResource HeroUnitText}" />
+                            </StackPanel>
+                            <c:Meter Value="{x:Bind Vm.Cpu.LoadPercent, Mode=OneWay}" FillBrush="{ThemeResource AccentBrush}" TrackBrush="{ThemeResource MeterTrackBrush}" />
+                        </StackPanel>
+                        <StackPanel Spacing="6">
+                            <c:BarStrip Height="30" Values="{x:Bind Vm.Cpu.ThreadLoads, Mode=OneWay}"
+                                        BarBrush="{ThemeResource AccentBrush}" TrackBrush="{ThemeResource MeterTrackBrush}" />
+                            <TextBlock Text="{x:Bind Vm.Cpu.ThreadCaption, Mode=OneWay}" Style="{StaticResource CaptionText}" />
+                        </StackPanel>
+                        <Rectangle Style="{StaticResource DividerLine}" />
+                        <StackPanel Spacing="8">
+                            <c:MetricRow Label="{l:Tr Key=metric.temperature}" Metric="{x:Bind Vm.Cpu.Temperature}" />
+                            <c:MetricRow Label="{l:Tr Key=metric.clock}" Metric="{x:Bind Vm.Cpu.Clock}" />
+                            <c:MetricRow Label="{l:Tr Key=metric.power}" Metric="{x:Bind Vm.Cpu.Power}" />
+                            <c:MetricRow Label="{l:Tr Key=cpu.topologyLabel}" Metric="{x:Bind Vm.Cpu.Topology}" />
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+
+                <!-- GPU -->
+                <Border Style="{StaticResource CardBorder}">
+                    <Grid>
+                        <StackPanel Spacing="14" Visibility="{x:Bind v:ViewHelpers.Visible(Vm.HasGpu), Mode=OneWay}">
+                            <Grid ColumnSpacing="8">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Spacing="3">
+                                    <TextBlock Text="{l:Tr Key=gpu.eyebrow, Upper=True}" Style="{StaticResource EyebrowText}" />
+                                    <TextBlock Text="{x:Bind Vm.SelectedGpu.Name, Mode=OneWay}" Style="{StaticResource CardTitleText}"
+                                               ToolTipService.ToolTip="{x:Bind Vm.SelectedGpu.Name, Mode=OneWay}" />
+                                </StackPanel>
+                                <ComboBox Grid.Column="1" MinWidth="0" VerticalAlignment="Top"
+                                          ItemsSource="{x:Bind Vm.Gpus}" SelectedItem="{x:Bind Vm.SelectedGpu, Mode=TwoWay}"
+                                          Visibility="{x:Bind v:ViewHelpers.Visible(Vm.HasMultipleGpus), Mode=OneWay}"
+                                          AutomationProperties.Name="{l:Tr Key=gpu.select}" />
+                            </Grid>
+                            <StackPanel Spacing="8">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="{x:Bind Vm.SelectedGpu.LoadText, Mode=OneWay}" Style="{StaticResource HeroValueText}" />
+                                    <TextBlock Text="{l:Tr Key=common.percentInUse}" Style="{StaticResource HeroUnitText}" />
+                                </StackPanel>
+                                <c:Meter Value="{x:Bind Vm.SelectedGpu.LoadPercent, Mode=OneWay}" FillBrush="{ThemeResource AccentBrush}" TrackBrush="{ThemeResource MeterTrackBrush}" />
+                            </StackPanel>
+                            <StackPanel Spacing="6">
+                                <c:MetricRow Label="{l:Tr Key=gpu.vram}" Metric="{x:Bind Vm.SelectedGpu.Vram, Mode=OneWay}" />
+                                <c:Meter Value="{x:Bind Vm.SelectedGpu.VramPercent, Mode=OneWay}" Height="3"
+                                         FillBrush="{ThemeResource SecondarySeriesBrush}" TrackBrush="{ThemeResource MeterTrackBrush}" />
+                            </StackPanel>
+                            <Rectangle Style="{StaticResource DividerLine}" />
+                            <StackPanel Spacing="8">
+                                <c:MetricRow Label="{l:Tr Key=metric.temperature}" Metric="{x:Bind Vm.SelectedGpu.Temperature, Mode=OneWay}" />
+                                <c:MetricRow Label="{l:Tr Key=gpu.hotspot}" Metric="{x:Bind Vm.SelectedGpu.Hotspot, Mode=OneWay}" />
+                                <c:MetricRow Label="{l:Tr Key=gpu.memoryJunction}" Metric="{x:Bind Vm.SelectedGpu.MemoryJunction, Mode=OneWay}" />
+                                <c:MetricRow Label="{l:Tr Key=metric.clock}" Metric="{x:Bind Vm.SelectedGpu.Clock, Mode=OneWay}" />
+                                <c:MetricRow Label="{l:Tr Key=metric.power}" Metric="{x:Bind Vm.SelectedGpu.Power, Mode=OneWay}" />
+                                <c:MetricRow Label="{l:Tr Key=gpu.fan}" Metric="{x:Bind Vm.SelectedGpu.Fan, Mode=OneWay}" />
+                            </StackPanel>
+                        </StackPanel>
+                        <StackPanel Spacing="6" Visibility="{x:Bind v:ViewHelpers.Collapsed(Vm.HasGpu), Mode=OneWay}">
+                            <TextBlock Text="{l:Tr Key=gpu.eyebrow, Upper=True}" Style="{StaticResource EyebrowText}" />
+                            <TextBlock Text="{l:Tr Key=gpu.none}" Style="{StaticResource SecondaryText}" />
+                        </StackPanel>
+                    </Grid>
+                </Border>
+
+                <!-- RAM -->
+                <Border Style="{StaticResource CardBorder}">
+                    <StackPanel Spacing="14">
+                        <StackPanel Spacing="3">
+                            <TextBlock Text="{l:Tr Key=ram.eyebrow, Upper=True}" Style="{StaticResource EyebrowText}" />
+                            <TextBlock Text="{x:Bind Vm.Ram.Title, Mode=OneWay}" Style="{StaticResource CardTitleText}" />
+                        </StackPanel>
+                        <StackPanel Spacing="8">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="{x:Bind Vm.Ram.UsedText, Mode=OneWay}" Style="{StaticResource HeroValueText}" />
+                                <TextBlock Text="{x:Bind Vm.Ram.UsedUnit, Mode=OneWay}" Style="{StaticResource HeroUnitText}" />
+                            </StackPanel>
+                            <c:Meter Value="{x:Bind Vm.Ram.LoadPercent, Mode=OneWay}" FillBrush="{ThemeResource AccentBrush}" TrackBrush="{ThemeResource MeterTrackBrush}" />
+                            <TextBlock Text="{x:Bind Vm.Ram.Caption, Mode=OneWay}" Style="{StaticResource CaptionText}" />
+                        </StackPanel>
+                        <Rectangle Style="{StaticResource DividerLine}" />
+                        <StackPanel Spacing="8">
+                            <c:MetricRow Label="{l:Tr Key=ram.available}" Metric="{x:Bind Vm.Ram.Available}" />
+                            <c:MetricRow Label="{l:Tr Key=ram.speed}" Metric="{x:Bind Vm.Ram.Speed}" />
+                            <c:MetricRow Label="{l:Tr Key=ram.modules}" Metric="{x:Bind Vm.Ram.Modules}" />
+                            <c:MetricRow Label="{l:Tr Key=ram.committed}" Metric="{x:Bind Vm.Ram.Committed}" />
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+
+                <!-- Armazenamento -->
+                <Border Style="{StaticResource CardBorder}">
+                    <StackPanel Spacing="14">
+                        <TextBlock Text="{l:Tr Key=storage.eyebrow, Upper=True}" Style="{StaticResource EyebrowText}" />
+                        <ItemsRepeater ItemsSource="{x:Bind Vm.Drives}">
+                            <ItemsRepeater.Layout>
+                                <StackLayout Spacing="16" />
+                            </ItemsRepeater.Layout>
+                            <ItemsRepeater.ItemTemplate>
+                                <DataTemplate x:DataType="vm:DriveItem">
+                                    <StackPanel Spacing="7">
+                                        <Grid ColumnSpacing="8">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto" />
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="Auto" />
+                                            </Grid.ColumnDefinitions>
+                                            <Border Style="{StaticResource TagBorder}">
+                                                <TextBlock Text="{x:Bind KindText, Mode=OneWay}" Style="{StaticResource TagText}" />
+                                            </Border>
+                                            <TextBlock Grid.Column="1" Text="{x:Bind Model, Mode=OneWay}" FontWeight="SemiBold" FontSize="13"
+                                                       TextTrimming="CharacterEllipsis" VerticalAlignment="Center"
+                                                       Foreground="{ThemeResource TextPrimaryBrush}" ToolTipService.ToolTip="{x:Bind HealthText, Mode=OneWay}" />
+                                            <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="5" VerticalAlignment="Center"
+                                                        ToolTipService.ToolTip="{x:Bind Temperature.Hint, Mode=OneWay}">
+                                                <TextBlock Text="{x:Bind Temperature.Text, Mode=OneWay}" FontSize="12"
+                                                           Foreground="{ThemeResource TextSecondaryBrush}" />
+                                            </StackPanel>
+                                        </Grid>
+                                        <ItemsRepeater ItemsSource="{x:Bind Volumes}">
+                                            <ItemsRepeater.Layout>
+                                                <StackLayout Spacing="6" />
+                                            </ItemsRepeater.Layout>
+                                            <ItemsRepeater.ItemTemplate>
+                                                <DataTemplate x:DataType="vm:VolumeItem">
+                                                    <StackPanel Spacing="4">
+                                                        <Grid>
+                                                            <TextBlock Text="{x:Bind Root, Mode=OneWay}" FontSize="12" FontWeight="SemiBold"
+                                                                       Foreground="{ThemeResource TextSecondaryBrush}" />
+                                                            <TextBlock Text="{x:Bind FreeText, Mode=OneWay}" FontSize="12" HorizontalAlignment="Right"
+                                                                       Foreground="{ThemeResource TextTertiaryBrush}" />
+                                                        </Grid>
+                                                        <c:Meter Value="{x:Bind UsedPercent, Mode=OneWay}" Height="3"
+                                                                 FillBrush="{ThemeResource SecondarySeriesBrush}" TrackBrush="{ThemeResource MeterTrackBrush}" />
+                                                    </StackPanel>
+                                                </DataTemplate>
+                                            </ItemsRepeater.ItemTemplate>
+                                        </ItemsRepeater>
+                                        <TextBlock Text="{x:Bind ActivityText, Mode=OneWay}" Style="{StaticResource CaptionText}" />
+                                    </StackPanel>
+                                </DataTemplate>
+                            </ItemsRepeater.ItemTemplate>
+                        </ItemsRepeater>
+                    </StackPanel>
+                </Border>
+            </c:AdaptiveColumnsPanel>
+
+            <!-- Atividade em tempo real -->
+            <StackPanel Spacing="8" Visibility="{x:Bind v:ViewHelpers.Visible(Vm.HasAlerts), Mode=OneWay}">
+                <TextBlock Text="{l:Tr Key=dashboard.recentAlerts}" Style="{StaticResource SectionTitleText}" />
+                <Border Style="{StaticResource CardBorder}" Padding="0">
+                    <ItemsRepeater ItemsSource="{x:Bind Vm.RecentAlerts}" ItemTemplate="{StaticResource RowTemplate}" />
+                </Border>
+            </StackPanel>
+
+            <StackPanel Spacing="2" Margin="0,8,0,0" Visibility="{x:Bind v:ViewHelpers.Visible(Vm.HasData), Mode=OneWay}">
+                <TextBlock Text="{l:Tr Key=dashboard.activity}" Style="{StaticResource SectionTitleText}" />
+                <TextBlock Text="{x:Bind Vm.ChartsCaption, Mode=OneWay}" Style="{StaticResource CaptionText}" />
+            </StackPanel>
+
+            <ItemsRepeater ItemsSource="{x:Bind Vm.Charts}" Visibility="{x:Bind v:ViewHelpers.Visible(Vm.HasData), Mode=OneWay}">
+                <ItemsRepeater.Layout>
+                    <UniformGridLayout MinItemWidth="340" MinItemHeight="190" MinColumnSpacing="16" MinRowSpacing="16"
+                                       ItemsStretch="Fill" MaximumRowsOrColumns="3" />
+                </ItemsRepeater.Layout>
+                <ItemsRepeater.ItemTemplate>
+                    <DataTemplate x:DataType="vm:ChartCard">
+                        <Border Style="{StaticResource CardBorder}" Padding="18,16,18,14">
+                            <Grid RowSpacing="10">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="*" />
+                                </Grid.RowDefinitions>
+                                <Grid ColumnSpacing="12">
+                                    <TextBlock Text="{x:Bind Title}" FontWeight="SemiBold" FontSize="13" Foreground="{ThemeResource TextPrimaryBrush}" />
+                                    <StackPanel Orientation="Horizontal" Spacing="12" HorizontalAlignment="Right">
+                                        <StackPanel Orientation="Horizontal" Spacing="6">
+                                            <Rectangle Width="10" Height="2" Fill="{ThemeResource AccentBrush}" VerticalAlignment="Center" />
+                                            <TextBlock Text="{x:Bind CurrentText, Mode=OneWay}" FontSize="12" FontWeight="SemiBold"
+                                                       Foreground="{ThemeResource TextPrimaryBrush}" />
+                                        </StackPanel>
+                                        <StackPanel Orientation="Horizontal" Spacing="6" Visibility="{x:Bind v:ViewHelpers.Visible(HasSecondary)}">
+                                            <Rectangle Width="10" Height="2" Fill="{ThemeResource SecondarySeriesBrush}" VerticalAlignment="Center" />
+                                            <TextBlock Text="{x:Bind SecondaryText, Mode=OneWay}" FontSize="12" FontWeight="SemiBold"
+                                                       Foreground="{ThemeResource TextSecondaryBrush}" />
+                                        </StackPanel>
+                                    </StackPanel>
+                                </Grid>
+                                <c:LineChart Grid.Row="1" MinHeight="120"
+                                             Values="{x:Bind Values, Mode=OneWay}" SecondaryValues="{x:Bind SecondaryValues, Mode=OneWay}"
+                                             Slots="60" Minimum="0" Maximum="{x:Bind Maximum}" BinaryScale="{x:Bind BinaryScale}" SecondsPerSlot="{x:Bind SecondsPerSlot, Mode=OneWay}"
+                                             Formatter="{x:Bind Formatter}" PrimaryLabel="{x:Bind PrimaryLabel}" SecondaryLabel="{x:Bind SecondaryLabel}"
+                                             Stroke="{ThemeResource AccentBrush}" AreaFill="{ThemeResource AccentAreaBrush}"
+                                             SecondaryStroke="{ThemeResource SecondarySeriesBrush}" GridStroke="{ThemeResource GridLineBrush}"
+                                             LabelForeground="{ThemeResource TextTertiaryBrush}"
+                                             TooltipBackground="{ThemeResource RaisedBackgroundBrush}" TooltipBorder="{ThemeResource CardBorderBrush}" />
+                            </Grid>
+                        </Border>
+                    </DataTemplate>
+                </ItemsRepeater.ItemTemplate>
+            </ItemsRepeater>
+        </StackPanel>
+    </ScrollViewer>
+</Page>

@@ -1,0 +1,96 @@
+<Page
+    x:Class="ShiftControl.App.Views.CleanupPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:l="using:ShiftControl.App.Services"
+    xmlns:v="using:ShiftControl.App.Views"
+    xmlns:c="using:ShiftControl.App.Controls"
+    NavigationCacheMode="Required"
+    Background="Transparent">
+
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <StackPanel Padding="{StaticResource PagePadding}" Spacing="20" MaxWidth="1100" HorizontalAlignment="Left">
+            <StackPanel Spacing="2">
+                <TextBlock Text="{l:Tr Key=nav.group.maintenance, Upper=True}" Style="{StaticResource EyebrowText}" />
+                <TextBlock Text="{l:Tr Key=nav.cleanup}" Style="{StaticResource PageTitleText}" />
+                <TextBlock Text="{l:Tr Key=cleanup.subtitle}" Style="{StaticResource CaptionText}" FontSize="13" TextWrapping="Wrap" TextTrimming="None" />
+            </StackPanel>
+
+            <InfoBar IsOpen="{x:Bind v:ViewHelpers.HasText(Vm.Message), Mode=OneWay}" IsClosable="True" Message="{x:Bind Vm.Message, Mode=OneWay}"
+                     Severity="{x:Bind v:SettingsPage.StatusSeverity(Vm.MessageIsError), Mode=OneWay}" />
+            <c:AdminNotice Text="{l:Tr Key=cleanup.adminNotice}" />
+
+            <!-- Limpeza -->
+            <StackPanel Spacing="8">
+                <TextBlock Text="{l:Tr Key=cleanup.safe}" Style="{StaticResource SectionTitleText}" />
+                <TextBlock Text="{l:Tr Key=cleanup.safeHint}" Style="{StaticResource CaptionText}" TextWrapping="Wrap" TextTrimming="None" />
+                <Border Style="{StaticResource CardBorder}" Padding="0">
+                    <StackPanel>
+                        <Grid>
+                            <ItemsRepeater ItemsSource="{x:Bind Vm.Categories}" ItemTemplate="{StaticResource RowTemplate}" />
+                            <StackPanel Orientation="Horizontal" Spacing="10" Margin="16,14" Visibility="{x:Bind v:ViewHelpers.Collapsed(Vm.Analyzed), Mode=OneWay}">
+                                <ProgressRing IsActive="True" Width="14" Height="14" />
+                                <TextBlock Text="{l:Tr Key=cleanup.analyzing}" Style="{StaticResource SecondaryText}" />
+                            </StackPanel>
+                        </Grid>
+                        <Grid Padding="16,12" ColumnSpacing="12">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock VerticalAlignment="Center" Style="{StaticResource BodyText}">
+                                <Run Text="{l:Tr Key=cleanup.selected}" /><Run Text=" " /><Run Text="{x:Bind Vm.SelectedSize, Mode=OneWay}" FontWeight="SemiBold" />
+                            </TextBlock>
+                            <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8">
+                                <ProgressRing IsActive="{x:Bind Vm.Busy, Mode=OneWay}" Width="16" Height="16" />
+                                <Button Style="{StaticResource QuietButton}" Content="{l:Tr Key=cleanup.reanalyze}" Command="{x:Bind Vm.AnalyzeCommand}" IsEnabled="{x:Bind v:ViewHelpers.Not(Vm.Busy), Mode=OneWay}" />
+                                <Button Style="{StaticResource PrimaryButton}" Content="{l:Tr Key=cleanup.clean}" Click="OnClean" IsEnabled="{x:Bind Vm.CanClean, Mode=OneWay}" />
+                            </StackPanel>
+                        </Grid>
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+
+            <!-- Analisador de espaço -->
+            <StackPanel Spacing="8">
+                <TextBlock Text="{l:Tr Key=storage.title}" Style="{StaticResource SectionTitleText}" />
+                <TextBlock Text="{l:Tr Key=storage.hint}" Style="{StaticResource CaptionText}" TextWrapping="Wrap" TextTrimming="None" />
+                <Border Style="{StaticResource CardBorder}">
+                    <Grid ColumnSpacing="10">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <Button Style="{StaticResource IconButton}" Command="{x:Bind Vm.UpCommand}" IsEnabled="{x:Bind Vm.CanGoUp, Mode=OneWay}"
+                                ToolTipService.ToolTip="{l:Tr Key=storage.up}" AutomationProperties.Name="{l:Tr Key=storage.up}">
+                            <FontIcon Glyph="&#xE74A;" FontSize="13" />
+                        </Button>
+                        <TextBox Grid.Column="1" Text="{x:Bind Vm.ScanPath, Mode=TwoWay}" KeyDown="OnPathKey" AutomationProperties.Name="{l:Tr Key=storage.path}" />
+                        <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="8">
+                            <Button Style="{StaticResource QuietButton}" Content="{l:Tr Key=storage.pick}" Click="OnPick" />
+                            <Button Style="{StaticResource PrimaryButton}" Content="{l:Tr Key=storage.scan}" Click="OnScan" Visibility="{x:Bind v:ViewHelpers.Collapsed(Vm.Scanning), Mode=OneWay}" />
+                            <Button Style="{StaticResource QuietButton}" Content="{l:Tr Key=common.cancel}" Command="{x:Bind Vm.CancelScanCommand}" Visibility="{x:Bind v:ViewHelpers.Visible(Vm.Scanning), Mode=OneWay}" />
+                        </StackPanel>
+                    </Grid>
+                </Border>
+                <StackPanel Orientation="Horizontal" Spacing="10" Visibility="{x:Bind v:ViewHelpers.Visible(Vm.Scanning), Mode=OneWay}">
+                    <ProgressRing IsActive="True" Width="14" Height="14" />
+                    <TextBlock Style="{StaticResource SecondaryText}" TextTrimming="CharacterEllipsis">
+                        <Run Text="{l:Tr Key=storage.scanning}" /><Run Text=" " /><Run Text="{x:Bind Vm.ScanProgress, Mode=OneWay}" />
+                    </TextBlock>
+                </StackPanel>
+                <TextBlock Text="{x:Bind Vm.ScanSummary, Mode=OneWay}" Style="{StaticResource BodyText}" FontWeight="SemiBold"
+                           Visibility="{x:Bind v:ViewHelpers.Visible(Vm.Scanned), Mode=OneWay}" />
+                <Border Style="{StaticResource CardBorder}" Padding="0" Visibility="{x:Bind v:ViewHelpers.Visible(Vm.Scanned), Mode=OneWay}">
+                    <ItemsRepeater ItemsSource="{x:Bind Vm.Children}" ItemTemplate="{StaticResource RowTemplate}" />
+                </Border>
+                <TextBlock Text="{l:Tr Key=storage.largest}" Style="{StaticResource SectionTitleText}" Margin="0,8,0,0"
+                           Visibility="{x:Bind v:ViewHelpers.Visible(Vm.Scanned), Mode=OneWay}" />
+                <Border Style="{StaticResource CardBorder}" Padding="0" Visibility="{x:Bind v:ViewHelpers.Visible(Vm.Scanned), Mode=OneWay}">
+                    <ItemsRepeater ItemsSource="{x:Bind Vm.LargestFiles}" ItemTemplate="{StaticResource RowTemplate}" />
+                </Border>
+            </StackPanel>
+        </StackPanel>
+    </ScrollViewer>
+</Page>

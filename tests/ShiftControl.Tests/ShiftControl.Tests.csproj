@@ -1,0 +1,28 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <OutputType>Exe</OutputType>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+    <RootNamespace>ShiftControl.Tests</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="xunit.v3" />
+    <PackageReference Include="xunit.runner.visualstudio" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\ShiftControl.Core\ShiftControl.Core.csproj" />
+    <ProjectReference Include="..\..\src\ShiftControl.Storage\ShiftControl.Storage.csproj" />
+    <ProjectReference Include="..\..\src\ShiftControl.Monitoring\ShiftControl.Monitoring.csproj" />
+    <ProjectReference Include="..\..\src\ShiftControl.Hardware\ShiftControl.Hardware.csproj" />
+    <ProjectReference Include="..\..\src\ShiftControl.Diagnostics\ShiftControl.Diagnostics.csproj" />
+    <ProjectReference Include="..\..\src\ShiftControl.Overlay\ShiftControl.Overlay.csproj" />
+    <ProjectReference Include="..\..\src\ShiftControl.Gaming\ShiftControl.Gaming.csproj" />
+    <ProjectReference Include="..\..\src\ShiftControl.Setup\ShiftControl.Setup.csproj" />
+    <ProjectReference Include="..\..\src\ShiftControl.Maintenance\ShiftControl.Maintenance.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <Using Include="Xunit" />
+  </ItemGroup>
+</Project>

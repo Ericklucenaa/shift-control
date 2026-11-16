@@ -1,0 +1,20 @@
+<UserControl
+    x:Class="ShiftControl.App.Controls.MetricRow"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <Grid ColumnSpacing="12" MinHeight="22">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*" />
+            <ColumnDefinition Width="Auto" />
+        </Grid.ColumnDefinitions>
+        <TextBlock Text="{x:Bind Label, Mode=OneWay}" Style="{StaticResource MetricLabelText}" VerticalAlignment="Center" />
+        <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="5" VerticalAlignment="Center"
+                    ToolTipService.ToolTip="{x:Bind Metric.Hint, Mode=OneWay}">
+            <TextBlock x:Name="ValueText" Text="{x:Bind Metric.Text, Mode=OneWay}" Style="{StaticResource MetricValueText}" />
+            <FontIcon Glyph="&#xE946;" FontSize="12" FontFamily="{StaticResource IconFont}"
+                      Foreground="{ThemeResource TextTertiaryBrush}"
+                      Visibility="{x:Bind HintVisibility(Metric.Available), Mode=OneWay}" />
+        </StackPanel>
+    </Grid>
+</UserControl>

@@ -1,0 +1,15 @@
+<Project>
+  <PropertyGroup>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Version>0.3.0</Version>
+    <Product>Shift Control</Product>
+    <Company>Shift</Company>
+    <Copyright>Shift Control</Copyright>
+    <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
+    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+    <EnforceCodeStyleInBuild>false</EnforceCodeStyleInBuild>
+    <NoWarn>$(NoWarn);CA1416</NoWarn>
+  </PropertyGroup>
+</Project>

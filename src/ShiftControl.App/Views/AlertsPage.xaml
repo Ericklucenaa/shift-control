@@ -1,0 +1,129 @@
+<Page
+    x:Class="ShiftControl.App.Views.AlertsPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:l="using:ShiftControl.App.Services"
+    xmlns:v="using:ShiftControl.App.Views"
+    NavigationCacheMode="Required"
+    Background="Transparent">
+
+    <Page.Resources>
+        <Style x:Key="RuleGrid" TargetType="Grid">
+            <Setter Property="ColumnSpacing" Value="16" />
+            <Setter Property="Padding" Value="0,10" />
+        </Style>
+    </Page.Resources>
+
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <StackPanel Padding="{StaticResource PagePadding}" Spacing="20" MaxWidth="1100" HorizontalAlignment="Left">
+            <StackPanel Spacing="2">
+                <TextBlock Text="{l:Tr Key=nav.group.system, Upper=True}" Style="{StaticResource EyebrowText}" />
+                <TextBlock Text="{l:Tr Key=nav.alerts}" Style="{StaticResource PageTitleText}" />
+                <TextBlock Text="{l:Tr Key=alerts.subtitle}" Style="{StaticResource CaptionText}" FontSize="13" TextWrapping="Wrap" TextTrimming="None" />
+            </StackPanel>
+
+            <StackPanel Spacing="8">
+                <TextBlock Text="{l:Tr Key=alerts.rules}" Style="{StaticResource SectionTitleText}" />
+                <Border Style="{StaticResource CardBorder}">
+                    <StackPanel>
+                        <Grid Style="{StaticResource RuleGrid}">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Spacing="2">
+                                <TextBlock Text="{l:Tr Key=alerts.enabled}" Style="{StaticResource BodyText}" FontWeight="SemiBold" />
+                                <TextBlock Text="{l:Tr Key=alerts.enabledHint}" Style="{StaticResource SecondaryText}" FontSize="12" TextWrapping="Wrap" />
+                            </StackPanel>
+                            <ToggleSwitch Grid.Column="1" IsOn="{x:Bind Vm.Enabled, Mode=TwoWay}" OnContent="" OffContent="" MinWidth="0" />
+                        </Grid>
+                        <Rectangle Style="{StaticResource DividerLine}" />
+
+                        <Grid Style="{StaticResource RuleGrid}" IsHitTestVisible="{x:Bind Vm.Enabled, Mode=OneWay}" Opacity="{x:Bind v:ViewHelpers.Dim(Vm.Enabled), Mode=OneWay}">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <CheckBox Content="{l:Tr Key=alerts.cpuTemp}" IsChecked="{x:Bind Vm.CpuTemp, Mode=TwoWay}" />
+                            <NumberBox Grid.Column="1" Width="130" Value="{x:Bind Vm.CpuTempLimit, Mode=TwoWay}" Minimum="60" Maximum="110" SpinButtonPlacementMode="Compact"
+                                       AutomationProperties.Name="{l:Tr Key=alerts.cpuTemp}" />
+                        </Grid>
+                        <Grid Style="{StaticResource RuleGrid}" IsHitTestVisible="{x:Bind Vm.Enabled, Mode=OneWay}" Opacity="{x:Bind v:ViewHelpers.Dim(Vm.Enabled), Mode=OneWay}">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <CheckBox Content="{l:Tr Key=alerts.gpuTemp}" IsChecked="{x:Bind Vm.GpuTemp, Mode=TwoWay}" />
+                            <NumberBox Grid.Column="1" Width="130" Value="{x:Bind Vm.GpuTempLimit, Mode=TwoWay}" Minimum="60" Maximum="105" SpinButtonPlacementMode="Compact"
+                                       AutomationProperties.Name="{l:Tr Key=alerts.gpuTemp}" />
+                        </Grid>
+                        <Grid Style="{StaticResource RuleGrid}" IsHitTestVisible="{x:Bind Vm.Enabled, Mode=OneWay}" Opacity="{x:Bind v:ViewHelpers.Dim(Vm.Enabled), Mode=OneWay}">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <CheckBox Content="{l:Tr Key=alerts.memory}" IsChecked="{x:Bind Vm.Memory, Mode=TwoWay}" />
+                            <NumberBox Grid.Column="1" Width="130" Value="{x:Bind Vm.MemoryPercent, Mode=TwoWay}" Minimum="50" Maximum="99" SpinButtonPlacementMode="Compact"
+                                       AutomationProperties.Name="{l:Tr Key=alerts.memory}" />
+                        </Grid>
+                        <Grid Style="{StaticResource RuleGrid}" IsHitTestVisible="{x:Bind Vm.Enabled, Mode=OneWay}" Opacity="{x:Bind v:ViewHelpers.Dim(Vm.Enabled), Mode=OneWay}">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <CheckBox Content="{l:Tr Key=alerts.diskFree}" IsChecked="{x:Bind Vm.DiskFree, Mode=TwoWay}" />
+                            <NumberBox Grid.Column="1" Width="130" Value="{x:Bind Vm.DiskFreePercent, Mode=TwoWay}" Minimum="1" Maximum="50" SpinButtonPlacementMode="Compact"
+                                       AutomationProperties.Name="{l:Tr Key=alerts.diskFree}" />
+                        </Grid>
+                        <Grid Style="{StaticResource RuleGrid}" IsHitTestVisible="{x:Bind Vm.Enabled, Mode=OneWay}" Opacity="{x:Bind v:ViewHelpers.Dim(Vm.Enabled), Mode=OneWay}">
+                            <CheckBox Content="{l:Tr Key=alerts.diskHealth}" IsChecked="{x:Bind Vm.DiskHealth, Mode=TwoWay}" />
+                        </Grid>
+                        <Rectangle Style="{StaticResource DividerLine}" />
+                        <Grid Style="{StaticResource RuleGrid}" IsHitTestVisible="{x:Bind Vm.Enabled, Mode=OneWay}" Opacity="{x:Bind v:ViewHelpers.Dim(Vm.Enabled), Mode=OneWay}">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Spacing="2">
+                                <TextBlock Text="{l:Tr Key=alerts.sustain}" Style="{StaticResource BodyText}" />
+                                <TextBlock Text="{l:Tr Key=alerts.sustainHint}" Style="{StaticResource SecondaryText}" FontSize="12" TextWrapping="Wrap" />
+                            </StackPanel>
+                            <NumberBox Grid.Column="1" Width="130" Value="{x:Bind Vm.SustainSeconds, Mode=TwoWay}" Minimum="0" Maximum="600" SpinButtonPlacementMode="Compact"
+                                       AutomationProperties.Name="{l:Tr Key=alerts.sustain}" />
+                        </Grid>
+                        <Grid Style="{StaticResource RuleGrid}" IsHitTestVisible="{x:Bind Vm.Enabled, Mode=OneWay}" Opacity="{x:Bind v:ViewHelpers.Dim(Vm.Enabled), Mode=OneWay}">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Spacing="2">
+                                <TextBlock Text="{l:Tr Key=alerts.cooldown}" Style="{StaticResource BodyText}" />
+                                <TextBlock Text="{l:Tr Key=alerts.cooldownHint}" Style="{StaticResource SecondaryText}" FontSize="12" TextWrapping="Wrap" />
+                            </StackPanel>
+                            <NumberBox Grid.Column="1" Width="130" Value="{x:Bind Vm.CooldownMinutes, Mode=TwoWay}" Minimum="1" Maximum="1440" SpinButtonPlacementMode="Compact"
+                                       AutomationProperties.Name="{l:Tr Key=alerts.cooldown}" />
+                        </Grid>
+                    </StackPanel>
+                </Border>
+                <TextBlock Text="{l:Tr Key=alerts.trayHint}" Style="{StaticResource CaptionText}" TextWrapping="Wrap" TextTrimming="None" />
+            </StackPanel>
+
+            <StackPanel Spacing="8">
+                <Grid>
+                    <TextBlock Text="{l:Tr Key=alerts.history}" Style="{StaticResource SectionTitleText}" VerticalAlignment="Center" />
+                    <Button Style="{StaticResource QuietButton}" HorizontalAlignment="Right" Content="{l:Tr Key=common.clearHistory}" Command="{x:Bind Vm.ClearHistoryCommand}"
+                            Visibility="{x:Bind v:ViewHelpers.Visible(Vm.HasHistory), Mode=OneWay}" />
+                </Grid>
+                <Border Style="{StaticResource CardBorder}" Padding="0">
+                    <Grid>
+                        <ItemsRepeater ItemsSource="{x:Bind Vm.History}" ItemTemplate="{StaticResource RowTemplate}" />
+                        <StackPanel Spacing="4" Padding="16,14" Visibility="{x:Bind v:ViewHelpers.Collapsed(Vm.HasHistory), Mode=OneWay}">
+                            <TextBlock Text="{l:Tr Key=alerts.emptyTitle}" Style="{StaticResource BodyText}" FontWeight="SemiBold" />
+                            <TextBlock Text="{l:Tr Key=alerts.emptyMessage}" Style="{StaticResource SecondaryText}" TextWrapping="Wrap" />
+                        </StackPanel>
+                    </Grid>
+                </Border>
+            </StackPanel>
+        </StackPanel>
+    </ScrollViewer>
+</Page>

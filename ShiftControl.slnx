@@ -1,0 +1,20 @@
+<Solution>
+  <Configurations>
+    <Platform Name="x64" />
+  </Configurations>
+  <Folder Name="/src/">
+    <Project Path="src/ShiftControl.App/ShiftControl.App.csproj" />
+    <Project Path="src/ShiftControl.Core/ShiftControl.Core.csproj" />
+    <Project Path="src/ShiftControl.Diagnostics/ShiftControl.Diagnostics.csproj" />
+    <Project Path="src/ShiftControl.Gaming/ShiftControl.Gaming.csproj" />
+    <Project Path="src/ShiftControl.Hardware/ShiftControl.Hardware.csproj" />
+    <Project Path="src/ShiftControl.Maintenance/ShiftControl.Maintenance.csproj" />
+    <Project Path="src/ShiftControl.Monitoring/ShiftControl.Monitoring.csproj" />
+    <Project Path="src/ShiftControl.Overlay/ShiftControl.Overlay.csproj" />
+    <Project Path="src/ShiftControl.Setup/ShiftControl.Setup.csproj" />
+    <Project Path="src/ShiftControl.Storage/ShiftControl.Storage.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/ShiftControl.Tests/ShiftControl.Tests.csproj" />
+  </Folder>
+</Solution>
