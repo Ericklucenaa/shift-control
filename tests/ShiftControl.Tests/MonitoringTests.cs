@@ -219,3 +219,49 @@ public class SensorExportTests
         Assert.Equal("RequiresAdmin", temp.Unavailable);
     }
 }
+
+public class SensorHighlightsTests
+{
+    private static SensorReading S(string name, SensorKind kind, HardwareCategory cat = HardwareCategory.Cpu) =>
+        new($"hw/{name}/{kind}", name, "hw", "Component", cat, kind, Reading.Of(1));
+
+    [Fact]
+    public void Cpu_line_shows_package_temperature_total_load_clock_and_power_in_that_order()
+    {
+        var sensors = new[]
+        {
+            S("CPU Core #1", SensorKind.Load), S("CCD1 (Tdie)", SensorKind.Temperature), S("Core (Tctl/Tdie)", SensorKind.Temperature),
+            S("CPU Total", SensorKind.Load), S("Core #1", SensorKind.Clock), S("Package", SensorKind.Power), S("Core #1", SensorKind.Voltage),
+        };
+        var picked = SensorHighlights.Pick(HardwareCategory.Cpu, sensors);
+        Assert.Equal(["Core (Tctl/Tdie)", "CPU Total", "Core #1", "Package"], picked.Select(p => p.Name));
+        Assert.Equal([SensorKind.Temperature, SensorKind.Load, SensorKind.Clock, SensorKind.Power], picked.Select(p => p.Kind));
+    }
+
+    [Fact]
+    public void Network_and_disk_rates_are_never_duplicated_or_guessed()
+    {
+        var net = SensorHighlights.Pick(HardwareCategory.Network,
+            [S("Download Speed", SensorKind.Throughput, HardwareCategory.Network), S("Upload Speed", SensorKind.Throughput, HardwareCategory.Network)]);
+        Assert.Equal(["Download Speed", "Upload Speed"], net.Select(p => p.Name));
+
+        var disk = SensorHighlights.Pick(HardwareCategory.Storage,
+            [S("Temperature", SensorKind.Temperature, HardwareCategory.Storage), S("Read Rate", SensorKind.Throughput, HardwareCategory.Storage)]);
+        Assert.Equal(["Temperature", "Read Rate"], disk.Select(p => p.Name));
+    }
+
+    [Fact]
+    public void Unknown_components_fall_back_to_first_sensor_of_each_main_kind_up_to_four()
+    {
+        var board = new[]
+        {
+            S("Voltage #1", SensorKind.Voltage, HardwareCategory.Motherboard), S("System", SensorKind.Temperature, HardwareCategory.Motherboard),
+            S("Chipset", SensorKind.Temperature, HardwareCategory.Motherboard), S("Fan #1", SensorKind.Fan, HardwareCategory.Motherboard),
+        };
+        var picked = SensorHighlights.Pick(HardwareCategory.Motherboard, board);
+        Assert.Equal(["System", "Fan #1"], picked.Select(p => p.Name));
+        Assert.Empty(SensorHighlights.Pick(HardwareCategory.Other, []));
+        Assert.True(SensorHighlights.Pick(HardwareCategory.Gpu,
+            [S("GPU Core", SensorKind.Temperature), S("GPU Core", SensorKind.Load), S("GPU Core", SensorKind.Clock), S("GPU Package", SensorKind.Power), S("GPU Memory Used", SensorKind.SmallData)]).Count <= SensorHighlights.Max);
+    }
+}

@@ -5,6 +5,7 @@
     xmlns:l="using:ShiftControl.App.Services"
     xmlns:vm="using:ShiftControl.App.ViewModels"
     xmlns:v="using:ShiftControl.App.Views"
+    xmlns:c="using:ShiftControl.App.Controls"
     NavigationCacheMode="Required"
     Background="Transparent">
 
@@ -42,6 +43,9 @@
                         <KeyboardAccelerator Key="Escape" Invoked="OnClearSearch" />
                     </TextBox.KeyboardAccelerators>
                 </TextBox>
+                <Button Style="{StaticResource QuietButton}" Command="{x:Bind Vm.ToggleAllCommand}">
+                    <TextBlock Text="{x:Bind Vm.ExpandAllText, Mode=OneWay}" />
+                </Button>
                 <Button Style="{StaticResource QuietButton}" Command="{x:Bind Vm.ResetStatsCommand}"
                         ToolTipService.ToolTip="{l:Tr Key=sensors.resetTip}">
                     <TextBlock Text="{l:Tr Key=sensors.reset}" />
@@ -102,14 +106,59 @@
                         </Style>
                     </ListView.ItemContainerStyle>
                     <ListView.GroupStyle>
-                        <GroupStyle HidesIfEmpty="True">
+                        <!-- Recolhido, o grupo fica sem linhas; o cabeçalho continua visível com os sensores principais. -->
+                        <GroupStyle HidesIfEmpty="False">
+                            <GroupStyle.HeaderContainerStyle>
+                                <Style TargetType="ListViewHeaderItem">
+                                    <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                                    <Setter Property="Padding" Value="4,4,8,0" />
+                                    <Setter Property="Margin" Value="0" />
+                                    <Setter Property="MinHeight" Value="0" />
+                                </Style>
+                            </GroupStyle.HeaderContainerStyle>
                             <GroupStyle.HeaderTemplate>
                                 <DataTemplate x:DataType="vm:SensorGroup">
-                                    <StackPanel Orientation="Horizontal" Spacing="10" Margin="0,10,0,2">
-                                        <TextBlock Text="{x:Bind Title}" FontWeight="SemiBold" FontSize="13" Foreground="{ThemeResource TextPrimaryBrush}" />
-                                        <TextBlock Text="{x:Bind Category}" Style="{StaticResource CaptionText}" VerticalAlignment="Center" />
-                                        <TextBlock Text="{x:Bind CountText}" Style="{StaticResource CaptionText}" VerticalAlignment="Center" />
-                                    </StackPanel>
+                                    <Button Command="{x:Bind ToggleCommand}" IsHitTestVisible="{x:Bind Expandable}" IsTabStop="{x:Bind Expandable}"
+                                            HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch"
+                                            Background="Transparent" BorderThickness="0" Padding="8,8,8,8"
+                                            CornerRadius="{StaticResource ControlRadius}"
+                                            ToolTipService.ToolTip="{x:Bind ToggleTip, Mode=OneWay}"
+                                            AutomationProperties.Name="{x:Bind Title}"
+                                            AutomationProperties.HelpText="{x:Bind ToggleTip, Mode=OneWay}">
+                                        <Grid ColumnSpacing="10">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="20" />
+                                                <ColumnDefinition Width="Auto" />
+                                                <ColumnDefinition Width="*" />
+                                            </Grid.ColumnDefinitions>
+                                            <FontIcon Glyph="{x:Bind ChevronGlyph, Mode=OneWay}" FontSize="11"
+                                                      Foreground="{ThemeResource TextSecondaryBrush}"
+                                                      Visibility="{x:Bind v:ViewHelpers.Visible(Expandable)}" />
+                                            <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+                                                <TextBlock Text="{x:Bind Title}" FontWeight="SemiBold" FontSize="13" Foreground="{ThemeResource TextPrimaryBrush}" />
+                                                <TextBlock Text="{x:Bind Category}" Style="{StaticResource CaptionText}" VerticalAlignment="Center" />
+                                                <TextBlock Text="{x:Bind CountText}" Style="{StaticResource CaptionText}" VerticalAlignment="Center" />
+                                            </StackPanel>
+                                            <!-- Principais, ao vivo, alinhados à direita como as colunas de valor. -->
+                                            <!-- Sem espaço, os menos importantes somem (PriorityStrip) em vez de cobrir o nome. -->
+                                            <ItemsControl Grid.Column="2" ItemsSource="{x:Bind Highlights}" HorizontalAlignment="Stretch" VerticalAlignment="Center"
+                                                          IsTabStop="False" Visibility="{x:Bind v:ViewHelpers.Visible(ShowHighlights), Mode=OneWay}">
+                                                <ItemsControl.ItemsPanel>
+                                                    <ItemsPanelTemplate><c:PriorityStrip Spacing="20" /></ItemsPanelTemplate>
+                                                </ItemsControl.ItemsPanel>
+                                                <ItemsControl.ItemTemplate>
+                                                    <DataTemplate x:DataType="vm:SensorRow">
+                                                        <StackPanel Orientation="Horizontal" Spacing="6" ToolTipService.ToolTip="{x:Bind Name}">
+                                                            <TextBlock Text="{x:Bind ShortLabel}" Style="{StaticResource CaptionText}" VerticalAlignment="Center" />
+                                                            <TextBlock Text="{x:Bind Value.Text, Mode=OneWay}" FontSize="13" FontWeight="SemiBold"
+                                                                       Foreground="{ThemeResource TextPrimaryBrush}" VerticalAlignment="Center"
+                                                                       Opacity="{x:Bind v:SensorsPage.ValueOpacity(Value.Available), Mode=OneWay}" />
+                                                        </StackPanel>
+                                                    </DataTemplate>
+                                                </ItemsControl.ItemTemplate>
+                                            </ItemsControl>
+                                        </Grid>
+                                    </Button>
                                 </DataTemplate>
                             </GroupStyle.HeaderTemplate>
                         </GroupStyle>

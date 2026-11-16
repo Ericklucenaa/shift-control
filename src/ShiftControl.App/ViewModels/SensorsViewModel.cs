@@ -76,16 +76,42 @@ public sealed partial class SensorsViewModel : ObservableObject
         Groups.Clear();
         var favorites = visible.Where(r => r.IsFavorite).ToList();
         if (favorites.Count > 0)
-            Groups.Add(new SensorGroup(L.Get("sensors.favorites"), "", favorites));
+            Groups.Add(new SensorGroup("favorites", L.Get("sensors.favorites"), "", favorites, [], expanded: true, expandable: false, OnGroupToggled));
 
+        // Componentes abrem recolhidos, só com os principais; a busca abre os grupos para mostrar o que bateu.
+        bool searching = q.Length > 0;
         foreach (var g in visible.GroupBy(r => r.HardwareId).OrderBy(g => g.First().Category).ThenBy(g => g.First().Hardware))
         {
             var first = g.First();
-            Groups.Add(new SensorGroup(first.Hardware, L.Get($"category.{first.Category}"),
-                // Dentro do tipo, mantém a ordem em que o hardware lista os sensores (Core #1, #2… #10).
-                g.OrderBy(r => r.Kind).ThenBy(r => r.Order)));
+            // Dentro do tipo, mantém a ordem em que o hardware lista os sensores (Core #1, #2… #10).
+            var rows = g.OrderBy(r => r.Kind).ThenBy(r => r.Order).ToList();
+            var all = _rows.Values.Where(r => r.HardwareId == first.HardwareId).OrderBy(r => r.Order).ToList();
+            var highlights = SensorHighlights.Pick(first.Category, all, r => r.Kind, r => r.Name);
+            Groups.Add(new SensorGroup(first.HardwareId, first.Hardware, L.Get($"category.{first.Category}"), rows, highlights,
+                expanded: searching || _expanded.Contains(first.HardwareId), expandable: !searching, OnGroupToggled));
         }
         IsEmpty = !IsLoading && Groups.Count == 0;
+        OnPropertyChanged(nameof(ExpandAllText));
+    }
+
+    private readonly HashSet<string> _expanded = new(StringComparer.Ordinal);
+
+    private void OnGroupToggled(SensorGroup group)
+    {
+        if (group.IsExpanded) _expanded.Add(group.Key);
+        else _expanded.Remove(group.Key);
+        OnPropertyChanged(nameof(ExpandAllText));
+    }
+
+    private bool AnyCollapsed => Groups.Any(g => g.Expandable && !g.IsExpanded);
+
+    public string ExpandAllText => L.Get(AnyCollapsed ? "sensors.expandAll" : "sensors.collapseAll");
+
+    [RelayCommand]
+    private void ToggleAll()
+    {
+        bool expand = AnyCollapsed;
+        foreach (var g in Groups.Where(g => g.Expandable)) g.SetExpanded(expand);
     }
 
     private void ToggleFavorite(SensorRow row)
@@ -113,17 +139,54 @@ public sealed partial class SensorsViewModel : ObservableObject
         _engine.Latest is { } s ? SensorExport.Rows(s.Sensors, _engine.Stats) : [];
 }
 
+/// <summary>
+/// Um componente da lista. Recolhido, a coleção fica vazia e o cabeçalho mostra só os sensores principais
+/// (<see cref="Highlights"/>, ao vivo); expandido, contém todas as linhas.
+/// </summary>
 public sealed partial class SensorGroup : ObservableCollection<SensorRow>
 {
-    public SensorGroup(string title, string category, IEnumerable<SensorRow> rows) : base(rows)
+    private readonly IReadOnlyList<SensorRow> _rows;
+    private readonly Action<SensorGroup> _toggled;
+
+    public SensorGroup(string key, string title, string category, IReadOnlyList<SensorRow> rows, IReadOnlyList<SensorRow> highlights,
+        bool expanded, bool expandable, Action<SensorGroup> toggled) : base(expanded ? rows : [])
     {
+        Key = key;
         Title = title;
         Category = category;
+        _rows = rows;
+        Highlights = highlights;
+        IsExpanded = expanded;
+        Expandable = expandable;
+        _toggled = toggled;
     }
 
+    public string Key { get; }
     public string Title { get; }
     public string Category { get; }
-    public string CountText => Count.ToString(L.Culture);
+    public bool Expandable { get; }
+    public bool IsExpanded { get; private set; }
+    public IReadOnlyList<SensorRow> Highlights { get; }
+    public string CountText => _rows.Count.ToString(L.Culture);
+    public string ChevronGlyph => IsExpanded ? "" : "";
+    public string ToggleTip => L.Get(IsExpanded ? "sensors.collapse" : "sensors.expand");
+    public bool ShowHighlights => !IsExpanded && Highlights.Count > 0;
+
+    public void SetExpanded(bool expanded)
+    {
+        if (!Expandable || expanded == IsExpanded) return;
+        IsExpanded = expanded;
+        if (expanded) foreach (var r in _rows) Add(r);
+        else Clear();
+        OnPropertyChanged(new System.ComponentModel.PropertyChangedEventArgs(nameof(IsExpanded)));
+        OnPropertyChanged(new System.ComponentModel.PropertyChangedEventArgs(nameof(ChevronGlyph)));
+        OnPropertyChanged(new System.ComponentModel.PropertyChangedEventArgs(nameof(ToggleTip)));
+        OnPropertyChanged(new System.ComponentModel.PropertyChangedEventArgs(nameof(ShowHighlights)));
+        _toggled(this);
+    }
+
+    [RelayCommand]
+    private void Toggle() => SetExpanded(!IsExpanded);
 }
 
 public sealed partial class SensorRow : ObservableObject
@@ -141,7 +204,19 @@ public sealed partial class SensorRow : ObservableObject
         Category = s.Category;
         Kind = s.Kind;
         TypeText = L.Get($"kind.{s.Kind}");
+        // Rótulo da linha recolhida: "Taxa · Taxa" ou "Dados" não dizem nada; leitura/gravação/download/upload/usada dizem.
+        ShortLabel = s.Name switch
+        {
+            "Read Rate" => L.Get("sensors.short.read"),
+            "Write Rate" => L.Get("sensors.short.write"),
+            "Download Speed" => L.Get("sensors.short.download"),
+            "Upload Speed" => L.Get("sensors.short.upload"),
+            "Memory Used" or "Used Memory" or "GPU Memory Used" => L.Get("sensors.short.used"),
+            _ => TypeText,
+        };
     }
+
+    public string ShortLabel { get; }
 
     public string Id { get; }
     public int Order { get; }

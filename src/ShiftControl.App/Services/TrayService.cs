@@ -99,6 +99,9 @@ public sealed partial class TrayService : IDisposable
         Shell_NotifyIconW(1, ref d);
     }
 
+    private const long DoubleEventWindowMs = 250;
+    private long _lastClick = -DoubleEventWindowMs;
+
     private nint WindowProc(nint hwnd, uint msg, nint wParam, nint lParam)
     {
         if (msg == WmTray)
@@ -109,6 +112,11 @@ public sealed partial class TrayService : IDisposable
             {
                 case 0x0202: // WM_LBUTTONUP
                 case 0x0400: // NIN_SELECT
+                    // Com NOTIFYICON_VERSION_4 um clique pode chegar como os dois eventos; contar duas vezes
+                    // abria e fechava (ou fechava e reabria) o mini-painel no mesmo clique.
+                    long now = Environment.TickCount64;
+                    if (now - _lastClick < DoubleEventWindowMs) break;
+                    _lastClick = now;
                     Command?.Invoke(TrayCommand.MiniPanel, x, y);
                     break;
                 case 0x007B: // WM_CONTEXTMENU

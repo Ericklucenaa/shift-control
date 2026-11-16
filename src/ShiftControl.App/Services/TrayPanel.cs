@@ -32,6 +32,11 @@ public sealed class TrayPanel
         _boost = boost;
     }
 
+    // Clicar no ícone tira o foco do painel antes de o clique chegar: o painel já fechou por "Deactivated"
+    // e o clique, sozinho, o reabriria. Um clique logo após esse fechamento é o usuário fechando.
+    private const long ReopenGuardMs = 500;
+    private long _closedByFocusLoss = long.MinValue / 2;
+
     public void Toggle(int cursorX, int cursorY)
     {
         if (_window is not null)
@@ -39,6 +44,7 @@ public sealed class TrayPanel
             Close();
             return;
         }
+        if (Environment.TickCount64 - _closedByFocusLoss < ReopenGuardMs) return;
         Open(cursorX, cursorY);
     }
 
@@ -67,7 +73,9 @@ public sealed class TrayPanel
 
         _window.Activated += (_, e) =>
         {
-            if (e.WindowActivationState == WindowActivationState.Deactivated) Close();
+            if (e.WindowActivationState != WindowActivationState.Deactivated || _window is null) return;
+            _closedByFocusLoss = Environment.TickCount64;
+            Close();
         };
         _window.Closed += (_, _) =>
         {
