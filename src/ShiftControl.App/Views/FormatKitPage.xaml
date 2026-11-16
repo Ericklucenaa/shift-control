@@ -149,7 +149,7 @@
                             <Button Style="{StaticResource PrimaryButton}" HorizontalAlignment="Stretch" Content="{x:Bind Vm.InstallButtonText, Mode=OneWay}"
                                     Command="{x:Bind Vm.InstallSelectedCommand}" IsEnabled="{x:Bind v:FormatKitPage.CanStart(Vm.Running, Vm.ToInstall, Vm.Loading), Mode=OneWay}" />
                             <Button Style="{StaticResource QuietButton}" HorizontalAlignment="Stretch" Content="{x:Bind Vm.UpgradeButtonText, Mode=OneWay}"
-                                    Command="{x:Bind Vm.UpgradeAllCommand}" IsEnabled="{x:Bind v:FormatKitPage.CanStart(Vm.Running, Vm.ToUpgrade, Vm.Loading), Mode=OneWay}" />
+                                    Command="{x:Bind Vm.UpgradeSelectedCommand}" IsEnabled="{x:Bind v:FormatKitPage.CanStart(Vm.Running, Vm.ToUpgrade, Vm.Loading), Mode=OneWay}" />
                             <TextBlock Text="{l:Tr Key=formatKit.installHint}" Style="{StaticResource CaptionText}" TextWrapping="Wrap" TextTrimming="None" />
                         </StackPanel>
                     </Border>

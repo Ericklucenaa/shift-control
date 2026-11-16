@@ -199,9 +199,9 @@ public sealed partial class FormatKitViewModel : ObservableObject
             if (!_all.Where(p => p.Selected).ToHashSet().SetEquals(expected)) Profile = Profiles[^1];
         }
         ToInstall = _all.Count(p => p.Selected);
-        ToUpgrade = _all.Count(p => p.Installed == true && p.HasUpdate);
+        ToUpgrade = SelectedUpgrades().Count;
         InstallButtonText = L.F("formatKit.installSelected", ToInstall);
-        UpgradeButtonText = L.F("formatKit.upgradeAll", ToUpgrade);
+        UpgradeButtonText = L.F("formatKit.upgradeSelected", ToUpgrade);
         Summary = L.F("formatKit.summary", _all.Count(p => p.Selected), _all.Count(p => p.Selected && p.Installed == true));
     }
 
@@ -230,9 +230,10 @@ public sealed partial class FormatKitViewModel : ObservableObject
             .Select(p => new InstallJob { Package = p.Package, Kind = JobKind.Install, RecordInstallation = p.Installed != true }).ToList());
 
     [RelayCommand]
-    private Task UpgradeAllAsync() =>
-        RunAsync(_all.Where(p => p.Installed == true && p.HasUpdate)
-            .Select(p => new InstallJob { Package = p.Package, Kind = JobKind.Upgrade }).ToList());
+    private Task UpgradeSelectedAsync() => RunAsync(SelectedUpgrades());
+
+    private List<InstallJob> SelectedUpgrades() => PackageJobPlanner.Upgrades(
+        _all.Select(p => new PackageSelection(p.Package, p.Selected, p.Installed == true, p.HasUpdate)));
 
     [RelayCommand]
     private Task RetryFailedAsync() =>

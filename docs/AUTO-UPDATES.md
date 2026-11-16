@@ -1,10 +1,10 @@
 # Releases e atualizacao automatica
 
-A partir da versao 0.3.0, o app consulta a ultima release estavel publica do repositorio `Ericklucenaa/shift-control` 20 segundos depois de abrir e a cada 2 minutos enquanto estiver aberto, inclusive na bandeja. Nao ha push instantaneo do GitHub para os computadores: a deteccao depende desse intervalo, da internet e dos limites da API publica.
+A partir da versao 0.3.3, o app consulta a ultima release estavel publica do repositorio `Ericklucenaa/shift-control` ao iniciar, antes de abrir a interface principal. Nao consulta a cada dois minutos. Tambem e possivel verificar manualmente em Configuracoes. Nao ha push instantaneo do GitHub para os computadores: a deteccao depende da abertura do app e da internet.
 
-O instalador e baixado do GitHub e conferido com o SHA-256 informado pelo proprio GitHub. Apenas URLs HTTPS das releases oficiais sao aceitas. Downloads incompletos ou com hash divergente nunca sao executados. Releases draft, pre-release e versoes iguais/anteriores sao ignoradas.
+O app consulta primeiro o manifesto publico `update.json` da ultima release e usa a API de releases como fallback. O instalador e baixado do GitHub e conferido com o SHA-256 publicado na release. Apenas URLs HTTPS das releases oficiais sao aceitas. Downloads incompletos ou com hash divergente nunca sao executados. Releases draft, pre-release e versoes iguais/anteriores nao iniciam uma atualizacao.
 
-Com **Instalar atualizacoes automaticamente** habilitado (padrao), o app aguarda jogos detectados, gravacao de sessoes, Game Boost, operacoes de manutencao e dialogos terminarem; avisa na bandeja, aguarda 30 segundos, encerra normalmente, instala silenciosamente na mesma pasta e reabre. Preferencias e historico ficam fora da pasta de instalacao. O usuario pode desativar a instalacao automatica ou toda verificacao em Configuracoes. Desativar durante o aviso cancela essa tentativa.
+Com **Instalar atualizacoes automaticamente** habilitado (padrao), uma tela de inicializacao mostra a consulta, o download e a instalacao antes de abrir o monitoramento e a interface principal. O instalador atualiza a mesma pasta. Preferencias e historico ficam fora da pasta de instalacao. O usuario pode desativar a instalacao automatica ou toda verificacao em Configuracoes.
 
 O modo portatil atualiza a propria pasta sem criar atalhos nem registrar desinstalador. A pasta precisa permitir escrita. Instancias de desenvolvimento/teste com `--data-dir` nao fazem instalacao automatica.
 
