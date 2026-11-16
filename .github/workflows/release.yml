@@ -47,6 +47,11 @@ jobs:
           ./tools/build-installer.ps1 -MakeNsis 'C:\Program Files (x86)\NSIS\makensis.exe' -OutputDirectory "$pwd\artifacts\release"
           python tools/package-portable.py artifacts/release --version $env:APP_VERSION
           if ($LASTEXITCODE -ne 0) { throw 'Packaging failed.' }
+      - name: Verify silent update in isolated portable directory
+        shell: powershell
+        env:
+          APP_VERSION: ${{ steps.version.outputs.value }}
+        run: ./tools/update-installer-smoke.ps1 -Installer "$pwd\artifacts\release\ShiftControl-$env:APP_VERSION-setup.exe"
       - name: Publish complete release
         shell: pwsh
         env:

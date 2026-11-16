@@ -5,7 +5,16 @@ $testRoot=Join-Path $projectRoot ('artifacts\update-tests\'+(Get-Date -Format 'y
 $destination=Join-Path $testRoot 'Portable With Spaces'
 New-Item -ItemType Directory -Path $destination -Force | Out-Null
 $registry='HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall\ShiftControl'
-$before=if (Test-Path $registry) { Get-ItemProperty $registry | ConvertTo-Json -Depth 3 } else { '' }
+function Registry-Snapshot {
+    if (-not (Test-Path $registry)) { return '' }
+    $key=Get-Item $registry
+    try {
+        $values=[ordered]@{}
+        foreach ($name in ($key.GetValueNames() | Sort-Object)) { $values[$name]=$key.GetValue($name) }
+        return ($values | ConvertTo-Json -Depth 3 -Compress)
+    } finally { $key.Dispose() }
+}
+$before=Registry-Snapshot
 function Install([bool]$update,[int]$callerPid=0) {
     $extra=if ($update) { '/UPDATE /NORESTART ' } else { '' }
     $wait=if ($callerPid -gt 0) { "/WAITPID=$callerPid " } else { '' }
@@ -33,7 +42,7 @@ finally { if (-not $caller.HasExited) { Stop-Process -Id $caller.Id } }
 if ((Get-FileHash $assembly -Algorithm SHA256).Hash -ne $hash) { throw 'Update did not replace old binaries.' }
 if ([IO.File]::ReadAllText($marker) -ne 'preserve me') { throw 'Unrelated portable file was lost.' }
 if (Test-Path (Join-Path $destination 'Uninstall.exe')) { throw 'Portable update registered an uninstaller.' }
-$after=if (Test-Path $registry) { Get-ItemProperty $registry | ConvertTo-Json -Depth 3 } else { '' }
+$after=Registry-Snapshot
 if ($before -ne $after) { throw 'User installation registry changed.' }
 $result=[pscustomobject]@{Passed=$true;SilentInstall=$true;WaitForCaller=$true;ReplacedBinaries=$true;PathWithSpaces=$true;PortablePreserved=$true;UserRegistryUnchanged=$true;RestartSuppressedForTest=$true;Directory=$destination}
 $result | ConvertTo-Json | Set-Content (Join-Path $testRoot 'report.json') -Encoding UTF8
