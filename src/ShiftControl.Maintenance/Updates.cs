@@ -25,6 +25,24 @@ public sealed class ReleaseClient(HttpClient http, string repository)
 
     public async Task<(ReleaseStatus Status, ReleaseUpdate? Update)> CheckAsync(string current, CancellationToken ct = default)
     {
+        using var timeout = CancellationTokenSource.CreateLinkedTokenSource(ct);
+        timeout.CancelAfter(TimeSpan.FromSeconds(15));
+        ct = timeout.Token;
+        // Public release asset avoids the unauthenticated GitHub API rate limit.
+        using var manifestRequest = new HttpRequestMessage(HttpMethod.Get, $"https://github.com/{repository}/releases/latest/download/update.json");
+        manifestRequest.Headers.CacheControl = new System.Net.Http.Headers.CacheControlHeaderValue { NoCache = true };
+        using var manifestResponse = await http.SendAsync(manifestRequest, ct);
+        if (manifestResponse.IsSuccessStatusCode)
+        {
+            var manifest = await manifestResponse.Content.ReadFromJsonAsync<ReleaseUpdate>(ct)
+                ?? throw new InvalidDataException("Empty update manifest.");
+            if (!TryVersion(manifest.Version, out _) || !OfficialReleaseUrl(manifest.PageUrl)
+                || manifest.InstallerUrl is null || !OfficialReleaseUrl(manifest.InstallerUrl)
+                || manifest.Sha256 is not { Length: 64 } || !manifest.Sha256.All(Uri.IsHexDigit))
+                throw new InvalidDataException("Invalid update manifest.");
+            return (IsNewer(manifest.Version, current) ? ReleaseStatus.Available : ReleaseStatus.UpToDate, manifest);
+        }
+        if (manifestResponse.StatusCode != HttpStatusCode.NotFound) manifestResponse.EnsureSuccessStatusCode();
         using var req = new HttpRequestMessage(HttpMethod.Get, $"https://api.github.com/repos/{repository}/releases/latest");
         req.Headers.Accept.ParseAdd("application/vnd.github+json");
         using var res = await http.SendAsync(req, ct);

@@ -15,6 +15,7 @@ namespace ShiftControl.App;
 public partial class App : Application
 {
     private MainWindow? _window;
+    private Views.StartupUpdateWindow? _startupWindow;
     private ILogger<App>? _log;
 
     public static ServiceProvider Services { get; private set; } = null!;
@@ -109,7 +110,7 @@ public partial class App : Application
         // Fases B-E: drivers, migração, Game Boost, manutenção, rede, alertas, bandeja e atualizações
         services.AddSingleton(_ =>
         {
-            var http = new HttpClient { Timeout = TimeSpan.FromSeconds(20) };
+            var http = new HttpClient { Timeout = Timeout.InfiniteTimeSpan };
             http.DefaultRequestHeaders.UserAgent.ParseAdd($"ShiftControl/{AppPaths.Version}");
             return http;
         });
@@ -170,7 +171,7 @@ public partial class App : Application
     [System.Runtime.InteropServices.DllImport("user32.dll")]
     private static extern bool SetForegroundWindow(nint hwnd);
 
-    protected override void OnLaunched(LaunchActivatedEventArgs args)
+    protected override async void OnLaunched(LaunchActivatedEventArgs args)
     {
         if (!AcquireSingleInstance())
         {
@@ -190,6 +191,21 @@ public partial class App : Application
         var theme = Services.GetRequiredService<ThemeService>();
         theme.Install(Resources);
         theme.SetAccent(settings.Current.Accent);
+        // Complete updates before monitoring, overlay, tray or the main UI can start.
+        if (settings.Current.CheckUpdates && !Environment.GetCommandLineArgs().Any(a => a.StartsWith("--data-dir=", StringComparison.Ordinal)))
+        {
+            _startupWindow = new Views.StartupUpdateWindow();
+            _startupWindow.Activate();
+            if (await _startupWindow.RunAsync(Services.GetRequiredService<UpdateService>(), settings.Current.AutoInstallUpdates))
+            {
+                _startupWindow.Dismiss();
+                _startupWindow = null;
+                Shutdown();
+                Exit();
+                return;
+            }
+        }
+
         var engine = Services.GetRequiredService<MonitoringEngine>();
         var history = Services.GetRequiredService<IHistoryStore>();
 
@@ -220,6 +236,8 @@ public partial class App : Application
             _window = new MainWindow(minimized, page);
             _window.Closed += (_, _) => Shutdown();
             _window.Show();
+            _startupWindow?.Dismiss();
+            _startupWindow = null;
 
             // O overlay usa a thread da interface (timers e janela própria).
             Services.GetRequiredService<OverlayService>().Initialize(_window.DispatcherQueue);
@@ -264,9 +282,6 @@ public partial class App : Application
         {
             _log?.LogError(ex, "Falha ao iniciar os serviços em segundo plano (bandeja, Game Boost, alertas).");
         }
-
-        Services.GetRequiredService<UpdateService>().Initialize(ui);
-
     }
 
     /// <summary>Mostra a janela principal (também quando estava escondida na bandeja).</summary>

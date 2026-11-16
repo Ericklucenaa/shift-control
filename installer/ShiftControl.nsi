@@ -20,12 +20,21 @@ RequestExecutionLevel admin
 SetCompressor /SOLID lzma
 !define MUI_ABORTWARNING
 !define MUI_FINISHPAGE_RUN "$INSTDIR\ShiftControl.exe"
+!define MUI_PAGE_CUSTOMFUNCTION_PRE SkipUpdatePage
 !insertmacro MUI_PAGE_WELCOME
 !insertmacro MUI_PAGE_INSTFILES
+!define MUI_PAGE_CUSTOMFUNCTION_PRE SkipUpdatePage
 !insertmacro MUI_PAGE_FINISH
 !insertmacro MUI_UNPAGE_CONFIRM
 !insertmacro MUI_UNPAGE_INSTFILES
 !insertmacro MUI_LANGUAGE "PortugueseBR"
+
+; Updates show installation progress without interactive welcome/finish steps.
+Function SkipUpdatePage
+  StrCmp $UpdateMode 1 0 done_skip_update
+  Abort
+  done_skip_update:
+FunctionEnd
 
 !macro WaitForApp PREFIX
   StrCpy $1 0
@@ -53,6 +62,8 @@ Function .onInit
   ${GetOptions} $R0 "/UPDATE" $R1
   IfErrors +2
     StrCpy $UpdateMode 1
+  StrCmp $UpdateMode 1 0 +2
+    SetAutoClose true
   ClearErrors
   ${GetOptions} $R0 "/PORTABLE" $R1
   IfErrors +2

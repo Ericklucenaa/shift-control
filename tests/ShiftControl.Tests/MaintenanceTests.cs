@@ -307,7 +307,9 @@ public class ReleaseTests
     public async Task Release_metadata_selects_only_official_installer()
     {
         string json = JsonSerializer.Serialize(new { tag_name = "v0.2.0", html_url = "https://github.com/owner/repo/releases/tag/v0.2.0", assets = new[] { new { name = "ShiftControl-setup.exe", browser_download_url = "https://github.com/owner/repo/releases/download/v0.2.0/ShiftControl-setup.exe", digest = "sha256:" + new string('a', 64) } } });
-        using var http = new HttpClient(new Handler(_ => new(HttpStatusCode.OK) { Content = new StringContent(json, Encoding.UTF8, "application/json") }));
+        using var http = new HttpClient(new Handler(request => request.RequestUri!.Host == "github.com"
+            ? new(HttpStatusCode.NotFound)
+            : new(HttpStatusCode.OK) { Content = new StringContent(json, Encoding.UTF8, "application/json") }));
         var result = await new ReleaseClient(http, "owner/repo").CheckAsync("0.1.0", TestContext.Current.CancellationToken);
         Assert.Equal(ReleaseStatus.Available, result.Status);
         Assert.Equal(new string('a', 64), result.Update!.Sha256);

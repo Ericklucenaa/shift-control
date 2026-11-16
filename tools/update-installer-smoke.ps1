@@ -15,10 +15,11 @@ function Registry-Snapshot {
     } finally { $key.Dispose() }
 }
 $before=Registry-Snapshot
-function Install([bool]$update,[int]$callerPid=0) {
+function Install([bool]$update,[int]$callerPid=0,[bool]$visible=$false) {
     $extra=if ($update) { '/UPDATE /NORESTART ' } else { '' }
     $wait=if ($callerPid -gt 0) { "/WAITPID=$callerPid " } else { '' }
-    $process=Start-Process -FilePath (Resolve-Path $Installer).Path -ArgumentList ('/S /PORTABLE '+$extra+$wait+'/D='+$destination) -WindowStyle Hidden -PassThru
+    $silent=if ($visible) { '' } else { '/S ' }
+    $process=Start-Process -FilePath (Resolve-Path $Installer).Path -ArgumentList ($silent+'/PORTABLE '+$extra+$wait+'/D='+$destination) -WindowStyle Hidden -PassThru
     if ($callerPid -gt 0) {
         Start-Sleep -Milliseconds 500
         if ($process.HasExited) { throw 'Installer did not wait for caller.' }
@@ -40,10 +41,14 @@ $caller=Start-Process -FilePath (Join-Path $env:SystemRoot 'System32\ping.exe') 
 try { Install $true $caller.Id }
 finally { if (-not $caller.HasExited) { Stop-Process -Id $caller.Id } }
 if ((Get-FileHash $assembly -Algorithm SHA256).Hash -ne $hash) { throw 'Update did not replace old binaries.' }
+# Visible startup updates must finish without welcome/finish buttons or restarting this test copy.
+[IO.File]::WriteAllText($assembly,'old test version')
+Install $true 0 $true
+if ((Get-FileHash $assembly -Algorithm SHA256).Hash -ne $hash) { throw 'Visible update did not replace old binaries.' }
 if ([IO.File]::ReadAllText($marker) -ne 'preserve me') { throw 'Unrelated portable file was lost.' }
 if (Test-Path (Join-Path $destination 'Uninstall.exe')) { throw 'Portable update registered an uninstaller.' }
 $after=Registry-Snapshot
 if ($before -ne $after) { throw 'User installation registry changed.' }
-$result=[pscustomobject]@{Passed=$true;SilentInstall=$true;WaitForCaller=$true;ReplacedBinaries=$true;PathWithSpaces=$true;PortablePreserved=$true;UserRegistryUnchanged=$true;RestartSuppressedForTest=$true;Directory=$destination}
+$result=[pscustomobject]@{Passed=$true;SilentInstall=$true;VisibleUpdate=$true;WaitForCaller=$true;ReplacedBinaries=$true;PathWithSpaces=$true;PortablePreserved=$true;UserRegistryUnchanged=$true;RestartSuppressedForTest=$true;Directory=$destination}
 $result | ConvertTo-Json | Set-Content (Join-Path $testRoot 'report.json') -Encoding UTF8
 $result

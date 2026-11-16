@@ -1129,11 +1129,17 @@
   "tasks.loadError": "No se pudieron actualizar los procesos. Inténtalo de nuevo.",
   "tasks.selectToEnd": "Selecciona una tarea y pulsa Finalizar tarea. También puedes usar el clic derecho o Supr.",
   "settings.autoInstallUpdates": "Install updates automatically",
-  "update.autoDescription": "Checks once when the app starts. Downloads, verifies and installs with automatic restart after games, operations and dialogs finish. You can also check manually below.",
+  "update.autoDescription": "On launch, shows update progress and downloads, verifies and installs a new version before starting the app. The app reopens when finished. On failure, retry or open the current version.",
   "update.autoRestart": "Version {0} ready. Shift Control will restart in 30 seconds to update. Turn off automatic installation in Settings to postpone.",
   "formatKit.search": "Search programs, IDs or categories",
   "formatKit.selectAll": "Select all",
   "formatKit.clearSelection": "Clear selection",
   "formatKit.refresh": "Refresh detection",
-  "formatKit.queueError": "Could not finish the queue. Review results and try again."
+  "formatKit.queueError": "Could not finish the queue. Review results and try again.",
+  "update.startup.checking": "Checking for updates…",
+  "update.startup.continue": "Open the app",
+  "update.startup.retry": "Try again",
+  "update.startup.verifying": "Verifying the installer…",
+  "update.startup.progress": "Downloading update… {0}%",
+  "update.startup.installing": "Installing update. The app will reopen automatically…"
 }

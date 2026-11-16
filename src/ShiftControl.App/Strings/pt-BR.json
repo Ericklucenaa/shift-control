@@ -1149,11 +1149,17 @@
   "tasks.loadError": "Não foi possível atualizar os processos. Tente novamente.",
   "tasks.selectToEnd": "Selecione uma tarefa na lista e clique em Encerrar tarefa. Também funciona com o botão direito ou Delete.",
   "settings.autoInstallUpdates": "Instalar atualizações automaticamente",
-  "update.autoDescription": "Verifica novas versões apenas ao iniciar o aplicativo. Baixa, verifica e instala com reinício automático. Aguarda jogos, operações e diálogos terminarem. Você também pode verificar manualmente abaixo.",
+  "update.autoDescription": "Ao abrir, mostra a tela de atualização e baixa, verifica e instala a nova versão antes de iniciar o aplicativo. O app reabre ao concluir. Se falhar, permite tentar novamente ou abrir a versão atual.",
   "update.autoRestart": "Versão {0} pronta. O Shift Control reiniciará em 30 segundos para atualizar. Desative a instalação automática em Configurações para adiar.",
   "formatKit.search": "Buscar programa, ID ou categoria",
   "formatKit.selectAll": "Marcar todos",
   "formatKit.clearSelection": "Limpar seleção",
   "formatKit.refresh": "Atualizar detecção",
-  "formatKit.queueError": "Não foi possível concluir a fila. Confira os resultados e tente novamente."
+  "formatKit.queueError": "Não foi possível concluir a fila. Confira os resultados e tente novamente.",
+  "update.startup.checking": "Verificando atualizações…",
+  "update.startup.continue": "Abrir o aplicativo",
+  "update.startup.retry": "Tentar novamente",
+  "update.startup.verifying": "Verificando a integridade do instalador…",
+  "update.startup.progress": "Baixando atualização… {0}%",
+  "update.startup.installing": "Instalando atualização. O aplicativo será reaberto automaticamente…"
 }

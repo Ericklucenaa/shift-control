@@ -8,7 +8,7 @@ public static class UpdateInstallation
         enabled && !gameActive && !operationActive && !dialogOpen;
 
     // NSIS requires /D to be the final argument, without quotes, including paths with spaces.
-    public static ProcessStartInfo StartInfo(string installer, string directory, bool installed)
+    public static ProcessStartInfo StartInfo(string installer, string directory, bool installed, bool visible = false)
     {
         directory = Path.GetFullPath(directory).TrimEnd(Path.DirectorySeparatorChar);
         if (directory.Contains('"') || directory.Contains('\r') || directory.Contains('\n'))
@@ -16,7 +16,7 @@ public static class UpdateInstallation
         return new ProcessStartInfo(Path.GetFullPath(installer))
         {
             UseShellExecute = true,
-            Arguments = $"/S /UPDATE /WAITPID={Environment.ProcessId} {(installed ? "" : "/PORTABLE ")}/D={directory}"
+            Arguments = $"{(visible ? "" : "/S ")}/UPDATE /WAITPID={Environment.ProcessId} {(installed ? "" : "/PORTABLE ")}/D={directory}"
         };
     }
 }
