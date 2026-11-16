@@ -1,4 +1,13 @@
 {
+  "formatKit.results": "{0} of {1} programs shown",
+  "formatKit.hiddenSelected": "{0} selected outside this search. They are included in the chosen action too.",
+  "formatKit.selectionScope": "Selects the entire catalog, including programs outside this search.",
+  "formatKit.noResults": "No programs found",
+  "formatKit.noResultsHint": "Try a name, ID or category. Your selection has been kept.",
+  "formatKit.clearSearch": "Clear search",
+  "formatKit.actions": "Selected programs",
+  "formatKit.selectionHint": "Update selected only includes selected programs with an available update.",
+  "formatKit.howItWorks": "How it works",
   "nav.group.dashboard": "Dashboard",
   "nav.group.hardware": "Hardware",
   "nav.group.system": "System",

@@ -120,6 +120,7 @@ public static class Cleaner
     {
         long freed = 0;
         int deleted = 0, skipped = 0;
+        var finalRoots = roots.Select(r => FinalPath(r, directory: true)).OfType<string>().ToList();
         foreach (var f in Files(c, roots, ct).ToList())
         {
             ct.ThrowIfCancellationRequested();
@@ -129,7 +130,7 @@ public static class Cleaner
                 f.Refresh();
                 if (!f.Exists || !Eligible(c, f, DateTime.Now)) { skipped++; continue; }
                 long length = f.Length;
-                f.Delete();
+                if (!DeleteWithinRoots(f.FullName, finalRoots)) { skipped++; continue; }
                 freed += length;
                 deleted++;
             }
@@ -165,6 +166,48 @@ public static class Cleaner
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { return false; }
     }
+
+    /// <summary>
+    /// Exclui pelo handle, depois de conferir o caminho real do próprio handle. Com o app elevado, um processo sem
+    /// privilégio poderia trocar uma subpasta do Temp por uma junção entre a checagem e a exclusão por nome; aqui o
+    /// arquivo verificado é exatamente o excluído. Links são abertos como links (nunca o destino).
+    /// </summary>
+    internal static bool DeleteWithinRoots(string path, IReadOnlyList<string> finalRoots)
+    {
+        using var handle = CreateFileW(path, Delete | FileReadAttributes, ShareAll, 0, OpenExisting, FlagOpenReparsePoint, 0);
+        if (handle.IsInvalid) return false;
+        string? final = FinalPath(handle);
+        if (final is null || !finalRoots.Any(r => final.StartsWith(r.TrimEnd('\\') + "\\", StringComparison.OrdinalIgnoreCase))) return false;
+        byte deleteFile = 1;
+        return SetFileInformationByHandle(handle, FileDispositionInfo, ref deleteFile, 1);
+    }
+
+    /// <summary>Caminho real (sem 8.3, junções ou links resolvidos pelo nome) de um arquivo ou pasta.</summary>
+    internal static string? FinalPath(string path, bool directory = false)
+    {
+        using var handle = CreateFileW(path, FileReadAttributes, ShareAll, 0, OpenExisting, directory ? FlagBackupSemantics : FlagOpenReparsePoint, 0);
+        return handle.IsInvalid ? null : FinalPath(handle);
+    }
+
+    private static string? FinalPath(Microsoft.Win32.SafeHandles.SafeFileHandle handle)
+    {
+        var buffer = new char[1024];
+        uint length = GetFinalPathNameByHandleW(handle, buffer, (uint)buffer.Length, 0);
+        return length is 0 || length >= buffer.Length ? null : new string(buffer, 0, (int)length);
+    }
+
+    private const uint Delete = 0x00010000, FileReadAttributes = 0x80, ShareAll = 0x7, OpenExisting = 3;
+    private const uint FlagOpenReparsePoint = 0x00200000, FlagBackupSemantics = 0x02000000;
+    private const int FileDispositionInfo = 4;
+
+    [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
+    private static extern Microsoft.Win32.SafeHandles.SafeFileHandle CreateFileW(string name, uint access, uint share, nint security, uint disposition, uint flags, nint template);
+
+    [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
+    private static extern uint GetFinalPathNameByHandleW(Microsoft.Win32.SafeHandles.SafeFileHandle handle, [Out] char[] buffer, uint length, uint flags);
+
+    [DllImport("kernel32.dll", SetLastError = true)]
+    private static extern bool SetFileInformationByHandle(Microsoft.Win32.SafeHandles.SafeFileHandle handle, int infoClass, ref byte info, uint size);
 
     private static void RemoveEmptyDirectories(IReadOnlyList<string> roots)
     {

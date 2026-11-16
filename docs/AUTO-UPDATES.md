@@ -2,7 +2,7 @@
 
 A partir da versao 0.3.3, o app consulta a ultima release estavel publica do repositorio `Ericklucenaa/shift-control` ao iniciar, antes de abrir a interface principal. Nao consulta a cada dois minutos. Tambem e possivel verificar manualmente em Configuracoes. Nao ha push instantaneo do GitHub para os computadores: a deteccao depende da abertura do app e da internet.
 
-O app consulta primeiro o manifesto publico `update.json` da ultima release e usa a API de releases como fallback. O instalador e baixado do GitHub e conferido com o SHA-256 publicado na release. Apenas URLs HTTPS das releases oficiais sao aceitas. Downloads incompletos ou com hash divergente nunca sao executados. Releases draft, pre-release e versoes iguais/anteriores nao iniciam uma atualizacao.
+O app consulta primeiro o manifesto publico `update.json` da ultima release e usa a API de releases como fallback. O instalador e baixado do GitHub e conferido com o SHA-256 publicado na release. Apenas URLs HTTPS das releases oficiais sao aceitas. Downloads incompletos ou com hash divergente nunca sao executados. Desde a 0.3.5, o instalador fica travado contra escrita, troca e exclusao, e o hash e conferido de novo pelo mesmo handle ate o processo iniciar, ja que a pasta de download e gravavel sem elevacao. Releases draft, pre-release e versoes iguais/anteriores nao iniciam uma atualizacao.
 
 Com **Instalar atualizacoes automaticamente** habilitado (padrao), uma tela de inicializacao mostra a consulta, o download e a instalacao antes de abrir o monitoramento e a interface principal. O instalador atualiza a mesma pasta. Preferencias e historico ficam fora da pasta de instalacao. O usuario pode desativar a instalacao automatica ou toda verificacao em Configuracoes.
 

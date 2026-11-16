@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="650" viewBox="0 0 1200 650" role="img" aria-labelledby="title desc">
+ <title id="title">Format Kit: proposta de organização</title>
+ <desc id="desc">Janela ampla com catálogo à esquerda e ações à direita. Janela estreita com catálogo acima das ações. Busca fixa, status abaixo do nome e aviso de seleção fora do filtro.</desc>
+ <style>text{font-family:Segoe UI,sans-serif;fill:#ECEDEE;font-size:15px}.hint{fill:#A0A4AA;font-size:13px}.box{fill:#17181A;stroke:#41464D}.line{stroke:#41464D}.action{fill:#1E2023;stroke:#A0A4AA}</style>
+ <rect width="1200" height="650" fill="#101112"/>
+ <text x="24" y="32" font-size="23">Format Kit — wireframe do incremento</text>
+ <text x="24" y="59" class="hint">Protótipo de disposição. As cores de destaque seguem a preferência do usuário.</text>
+ <rect x="24" y="85" width="735" height="530" rx="6" class="box"/>
+ <text x="44" y="119">Format Kit</text><text x="535" y="119" class="hint">Importar / Exportar</text>
+ <text x="44" y="151" class="hint">Perfis / resumo da seleção</text>
+ <rect x="44" y="175" width="440" height="72" rx="4" class="action"/>
+ <text x="58" y="202">Marcar todos / Limpar / Detecção</text><text x="58" y="230" class="hint">Busca e contagem de resultados</text>
+ <text x="44" y="278" class="hint">Aviso: marcados fora da busca</text>
+ <rect x="44" y="296" width="440" height="290" rx="4" class="box"/>
+ <text x="60" y="327">□ Programa</text><text x="80" y="353" class="hint">Descrição / origem / versão e status</text>
+ <line x1="60" x2="465" y1="373" y2="373" class="line"/>
+ <text x="60" y="407">□ Programa</text><text x="80" y="433" class="hint">Descrição / origem / versão e status</text>
+ <text x="60" y="545" class="hint">Somente o catálogo rola</text>
+ <rect x="505" y="175" width="233" height="411" rx="4" class="action"/>
+ <text x="520" y="207">Instalar marcados</text><text x="520" y="240">Atualizar marcados</text><text x="520" y="283" class="hint">Orientação e fila</text>
+ <rect x="790" y="85" width="386" height="530" rx="6" class="box"/>
+ <text x="808" y="117">Format Kit</text><text x="808" y="144" class="hint">Importar / Exportar</text><text x="808" y="173" class="hint">Perfis / resumo</text>
+ <rect x="808" y="193" width="350" height="65" rx="4" class="action"/>
+ <text x="820" y="218">Seleção / Detecção</text><text x="820" y="244" class="hint">Busca fixa</text>
+ <rect x="808" y="272" width="350" height="178" rx="4" class="box"/>
+ <text x="820" y="302">□ Programa</text><text x="842" y="329" class="hint">Status abaixo do nome</text><text x="820" y="419" class="hint">Catálogo com rolagem própria</text>
+ <rect x="808" y="466" width="350" height="130" rx="4" class="action"/>
+ <text x="820" y="496">Instalar / Atualizar marcados</text><text x="820" y="528" class="hint">Ações e progresso abaixo da lista</text><text x="820" y="562" class="hint">Altura limitada; rolagem independente</text>
+</svg>

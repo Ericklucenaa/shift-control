@@ -5,155 +5,168 @@
     xmlns:l="using:ShiftControl.App.Services"
     xmlns:vm="using:ShiftControl.App.ViewModels"
     xmlns:v="using:ShiftControl.App.Views"
-    NavigationCacheMode="Required"
-    Background="Transparent">
-
-    <Grid x:Name="Root" Padding="32,20,32,0" RowSpacing="16" MaxWidth="1500">
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto" />
-            <RowDefinition Height="*" />
-        </Grid.RowDefinitions>
+    NavigationCacheMode="Required" Background="Transparent">
+    <Grid x:Name="Root" Padding="32,20,32,16" RowSpacing="16" MaxWidth="1500">
+        <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
         <VisualStateManager.VisualStateGroups>
             <VisualStateGroup>
                 <VisualState x:Name="Wide">
-                    <VisualState.StateTriggers>
-                        <AdaptiveTrigger MinWindowWidth="1200" />
-                    </VisualState.StateTriggers>
+                    <VisualState.StateTriggers><AdaptiveTrigger MinWindowWidth="1200"/></VisualState.StateTriggers>
                 </VisualState>
                 <VisualState x:Name="Narrow">
-                    <VisualState.StateTriggers>
-                        <AdaptiveTrigger MinWindowWidth="0" />
-                    </VisualState.StateTriggers>
+                    <VisualState.StateTriggers><AdaptiveTrigger MinWindowWidth="0"/></VisualState.StateTriggers>
                     <VisualState.Setters>
-                        <Setter Target="SideColumn.Width" Value="0" />
-                        <Setter Target="SideScroll.(Grid.Column)" Value="0" />
-                        <Setter Target="SideScroll.(Grid.Row)" Value="0" />
-                        <Setter Target="SideScroll.MaxHeight" Value="320" />
+                        <Setter Target="Root.Padding" Value="20,16,20,12"/>
+                        <Setter Target="SideColumn.Width" Value="0"/>
+                        <Setter Target="SideScroll.(Grid.Column)" Value="0"/>
+                        <Setter Target="SideScroll.(Grid.Row)" Value="1"/>
+                        <Setter Target="SideScroll.MaxHeight" Value="210"/>
+                        <Setter Target="Workspace.ColumnSpacing" Value="0"/>
+                        <Setter Target="HeaderActions.(Grid.Column)" Value="0"/>
+                        <Setter Target="HeaderActions.(Grid.Row)" Value="1"/>
+                        <Setter Target="HeaderActions.HorizontalAlignment" Value="Left"/>
+                        <Setter Target="HeaderActions.Margin" Value="0,8,0,0"/>
+                        <Setter Target="SelectionSummary.(Grid.Column)" Value="0"/>
+                        <Setter Target="SelectionSummary.(Grid.Row)" Value="1"/>
+                        <Setter Target="ProfileColumn.Width" Value="*"/>
+                        <Setter Target="SummaryColumn.Width" Value="0"/>
+                        <Setter Target="ActionSecondColumn.Width" Value="*"/>
+                        <Setter Target="ActionButtons.ColumnSpacing" Value="8"/>
+                        <Setter Target="ActionButtons.RowSpacing" Value="0"/>
+                        <Setter Target="UpgradeButton.(Grid.Row)" Value="0"/>
+                        <Setter Target="UpgradeButton.(Grid.Column)" Value="1"/>
+                        <Setter Target="SelectionHint.Visibility" Value="Collapsed"/>
                     </VisualState.Setters>
                 </VisualState>
             </VisualStateGroup>
         </VisualStateManager.VisualStateGroups>
-
-        <StackPanel Spacing="16">
+        <StackPanel Spacing="12">
             <Grid ColumnSpacing="16">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="Auto" />
-                </Grid.ColumnDefinitions>
-                <StackPanel Spacing="2">
-                    <TextBlock Text="{l:Tr Key=nav.group.tools, Upper=True}" Style="{StaticResource EyebrowText}" />
-                    <TextBlock Text="{l:Tr Key=nav.formatKit}" Style="{StaticResource PageTitleText}" />
-                    <TextBlock Text="{l:Tr Key=formatKit.subtitle}" Style="{StaticResource CaptionText}" FontSize="13" TextWrapping="Wrap" TextTrimming="None" />
+                <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+                <StackPanel Spacing="4">
+                    <TextBlock Text="{l:Tr Key=nav.formatKit}" Style="{StaticResource PageTitleText}"/>
+                    <TextBlock Text="{l:Tr Key=formatKit.subtitle}" Style="{StaticResource SecondaryText}" TextWrapping="Wrap"/>
                 </StackPanel>
-                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" VerticalAlignment="Bottom">
-                    <Button Style="{StaticResource QuietButton}" Content="{l:Tr Key=formatKit.import}" Click="OnImport" IsEnabled="{x:Bind v:ViewHelpers.Not(Vm.Running), Mode=OneWay}" />
-                    <Button Style="{StaticResource QuietButton}" Content="{l:Tr Key=formatKit.export}" Click="OnExport" />
+                <StackPanel x:Name="HeaderActions" Grid.Column="1" Orientation="Horizontal" Spacing="8" VerticalAlignment="Bottom">
+                    <Button Style="{StaticResource QuietButton}" Content="{l:Tr Key=formatKit.import}" Click="OnImport" IsEnabled="{x:Bind v:FormatKitPage.CanEdit(Vm.Running, Vm.Loading), Mode=OneWay}"/>
+                    <Button Style="{StaticResource QuietButton}" Content="{l:Tr Key=formatKit.export}" Click="OnExport" IsEnabled="{x:Bind v:FormatKitPage.CanEdit(Vm.Running, Vm.Loading), Mode=OneWay}"/>
                 </StackPanel>
             </Grid>
-
             <InfoBar Severity="Error" IsClosable="False" IsOpen="{x:Bind Vm.WinGetMissing, Mode=OneWay}"
-                     Title="{l:Tr Key=formatKit.wingetMissingTitle}" Message="{l:Tr Key=formatKit.wingetMissing}" />
-            <InfoBar Severity="Informational" IsClosable="True" IsOpen="{x:Bind v:ViewHelpers.Not(Vm.IsElevated), Mode=OneWay}"
-                     Title="{l:Tr Key=formatKit.uacTitle}" Message="{l:Tr Key=formatKit.uac}" />
-            <InfoBar x:Name="KitBar" IsClosable="True" IsOpen="False" />
-            <InfoBar Severity="Warning" IsClosable="True" IsOpen="{x:Bind v:ViewHelpers.HasText(Vm.Message), Mode=OneWay}" Message="{x:Bind Vm.Message, Mode=OneWay}" />
-
-            <!-- Perfis -->
+                     Visibility="{x:Bind v:ViewHelpers.Visible(Vm.WinGetMissing), Mode=OneWay}"
+                     Title="{l:Tr Key=formatKit.wingetMissingTitle}" Message="{l:Tr Key=formatKit.wingetMissing}"/>
+            <InfoBar Severity="Informational" IsClosable="True" Closed="OnInfoBarClosed" IsOpen="{x:Bind v:ViewHelpers.Not(Vm.IsElevated), Mode=OneWay}"
+                     Visibility="{x:Bind v:ViewHelpers.Collapsed(Vm.IsElevated), Mode=OneWay}"
+                     Title="{l:Tr Key=formatKit.uacTitle}" Message="{l:Tr Key=formatKit.uac}"/>
+            <InfoBar x:Name="KitBar" IsClosable="True" IsOpen="False" Visibility="Collapsed" Closed="OnInfoBarClosed"/>
+            <InfoBar Severity="Warning" IsClosable="True" Closed="OnInfoBarClosed" IsOpen="{x:Bind v:ViewHelpers.HasText(Vm.Message), Mode=OneWay}"
+                     Visibility="{x:Bind v:ViewHelpers.VisibleIfText(Vm.Message), Mode=OneWay}" Message="{x:Bind Vm.Message, Mode=OneWay}"/>
             <Grid ColumnSpacing="16" RowSpacing="8">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="Auto" />
-                    <ColumnDefinition Width="*" />
-                </Grid.ColumnDefinitions>
-                <Border Background="{ThemeResource CardBackgroundBrush}" BorderBrush="{ThemeResource CardBorderBrush}" BorderThickness="1" CornerRadius="6" Padding="3">
-                    <StackPanel x:Name="ProfileHost" Orientation="Horizontal" Spacing="2" />
-                </Border>
-                <TextBlock Grid.Column="1" Text="{x:Bind Vm.Summary, Mode=OneWay}" Style="{StaticResource CaptionText}" VerticalAlignment="Center" />
+                <Grid.ColumnDefinitions><ColumnDefinition x:Name="ProfileColumn" Width="Auto"/><ColumnDefinition x:Name="SummaryColumn" Width="*"/></Grid.ColumnDefinitions>
+                <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+                <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled" HorizontalScrollMode="Enabled"
+                              IsEnabled="{x:Bind v:FormatKitPage.CanEdit(Vm.Running, Vm.Loading), Mode=OneWay}">
+                    <Border Background="{ThemeResource CardBackgroundBrush}" BorderBrush="{ThemeResource CardBorderBrush}" BorderThickness="1" CornerRadius="6" Padding="3">
+                        <StackPanel x:Name="ProfileHost" Orientation="Horizontal" Spacing="2"/>
+                    </Border>
+                </ScrollViewer>
+                <TextBlock x:Name="SelectionSummary" Grid.Column="1" Text="{x:Bind Vm.Summary, Mode=OneWay}"
+                           Style="{StaticResource SecondaryText}" VerticalAlignment="Center" TextWrapping="Wrap" AutomationProperties.LiveSetting="Polite"/>
             </Grid>
         </StackPanel>
-
-            <Grid Grid.Row="1" ColumnSpacing="24" RowSpacing="12">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*" />
-                    <ColumnDefinition x:Name="SideColumn" Width="380" />
-                </Grid.ColumnDefinitions>
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto" />
-                    <RowDefinition Height="*" />
-                </Grid.RowDefinitions>
-
-                <!-- Catálogo (rolagem própria; o foco num item não arrasta a página) -->
-                <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" BringIntoViewOnFocusChange="False" Padding="0,0,12,0" IsEnabled="{x:Bind v:ViewHelpers.Not(Vm.Running), Mode=OneWay}">
-                <StackPanel x:Name="Main" Spacing="16" Padding="0,0,0,32">
-                    <StackPanel Orientation="Horizontal" Spacing="10" Visibility="{x:Bind v:ViewHelpers.Visible(Vm.Loading), Mode=OneWay}">
-                        <ProgressRing IsActive="True" Width="16" Height="16" />
-                        <TextBlock Text="{l:Tr Key=formatKit.loading}" Style="{StaticResource SecondaryText}" VerticalAlignment="Center" />
+        <Grid x:Name="Workspace" Grid.Row="1" ColumnSpacing="24" RowSpacing="12">
+            <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition x:Name="SideColumn" Width="340"/></Grid.ColumnDefinitions>
+            <Grid.RowDefinitions><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+            <Grid RowSpacing="12">
+                <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
+                <StackPanel Spacing="8">
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <Button Content="{l:Tr Key=formatKit.selectAll}" Command="{x:Bind Vm.SelectAllCommand}" ToolTipService.ToolTip="{l:Tr Key=formatKit.selectionScope}" IsEnabled="{x:Bind v:FormatKitPage.CanEdit(Vm.Running, Vm.Loading), Mode=OneWay}"/>
+                        <Button Content="{l:Tr Key=formatKit.clearSelection}" Command="{x:Bind Vm.ClearSelectionCommand}" IsEnabled="{x:Bind v:FormatKitPage.CanEdit(Vm.Running, Vm.Loading), Mode=OneWay}"/>
+                        <Button Content="{l:Tr Key=formatKit.refresh}" Command="{x:Bind Vm.RefreshCommand}" IsEnabled="{x:Bind v:FormatKitPage.CanEdit(Vm.Running, Vm.Loading), Mode=OneWay}"/>
                     </StackPanel>
-                    <StackPanel Orientation="Horizontal" Spacing="8" IsHitTestVisible="{x:Bind v:ViewHelpers.Not(Vm.Running), Mode=OneWay}">
-                        <Button Content="{l:Tr Key=formatKit.selectAll}" Command="{x:Bind Vm.SelectAllCommand}" />
-                        <Button Content="{l:Tr Key=formatKit.clearSelection}" Command="{x:Bind Vm.ClearSelectionCommand}" />
-                        <Button Content="{l:Tr Key=formatKit.refresh}" Command="{x:Bind Vm.RefreshCommand}" />
+                    <TextBox x:Name="PackageSearch" Text="{x:Bind Vm.Search, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                             PlaceholderText="{l:Tr Key=formatKit.search}" AutomationProperties.Name="{l:Tr Key=formatKit.search}"
+                             IsEnabled="{x:Bind v:ViewHelpers.Not(Vm.Running), Mode=OneWay}"/>
+                    <TextBlock Text="{x:Bind Vm.ResultsText, Mode=OneWay}" Style="{StaticResource CaptionText}"/>
+                    <TextBlock Text="{x:Bind Vm.HiddenSelectionText, Mode=OneWay}" Style="{StaticResource SecondaryText}" TextWrapping="Wrap"
+                               Visibility="{x:Bind v:ViewHelpers.VisibleIfText(Vm.HiddenSelectionText), Mode=OneWay}" AutomationProperties.LiveSetting="Polite"/>
+                    <StackPanel Orientation="Horizontal" Spacing="8" Visibility="{x:Bind v:ViewHelpers.Visible(Vm.Loading), Mode=OneWay}">
+                        <ProgressRing IsActive="{x:Bind Vm.Loading, Mode=OneWay}" Width="16" Height="16"/>
+                        <TextBlock Text="{l:Tr Key=formatKit.loading}" Style="{StaticResource SecondaryText}"/>
                     </StackPanel>
-                    <TextBox Text="{x:Bind Vm.Search, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" PlaceholderText="{l:Tr Key=formatKit.search}" AutomationProperties.Name="{l:Tr Key=formatKit.search}" />
-                    <ItemsRepeater ItemsSource="{x:Bind Vm.Groups, Mode=OneWay}">
-                        <ItemsRepeater.Layout>
-                            <StackLayout Spacing="16" />
-                        </ItemsRepeater.Layout>
-                        <ItemsRepeater.ItemTemplate>
-                            <DataTemplate x:DataType="vm:PackageGroup">
-                                <StackPanel Spacing="8">
-                                    <TextBlock Text="{x:Bind Category}" Style="{StaticResource SectionTitleText}" FontSize="14" />
-                                    <Border Style="{StaticResource CardBorder}" Padding="6">
-                                        <ItemsRepeater ItemsSource="{x:Bind Items}">
-                                            <ItemsRepeater.ItemTemplate>
-                                                <DataTemplate x:DataType="vm:PackageVm">
-                                                    <Grid ColumnSpacing="12" Padding="10,8">
-                                                        <Grid.ColumnDefinitions>
-                                                            <ColumnDefinition Width="Auto" />
-                                                            <ColumnDefinition Width="*" />
-                                                            <ColumnDefinition Width="Auto" />
-                                                        </Grid.ColumnDefinitions>
-                                                        <CheckBox IsChecked="{x:Bind Selected, Mode=TwoWay}" MinWidth="0" VerticalAlignment="Top"
-                                                                  AutomationProperties.Name="{x:Bind Name}" />
-                                                        <StackPanel Grid.Column="1" Spacing="1" VerticalAlignment="Center">
-                                                            <StackPanel Orientation="Horizontal" Spacing="8">
-                                                                <TextBlock Text="{x:Bind Name}" FontWeight="SemiBold" FontSize="13" Foreground="{ThemeResource TextPrimaryBrush}" />
-                                                                <TextBlock Text="{x:Bind SourceText}" Style="{StaticResource CaptionText}" FontSize="11" VerticalAlignment="Center" />
-                                                            </StackPanel>
-                                                            <TextBlock Text="{x:Bind Description}" Style="{StaticResource CaptionText}" TextWrapping="Wrap" TextTrimming="None"
-                                                                       Visibility="{x:Bind v:ViewHelpers.VisibleIfText(Description)}" />
-                                                            <TextBlock Text="{x:Bind Note}" Style="{StaticResource CaptionText}" TextWrapping="Wrap" TextTrimming="None"
-                                                                       Foreground="{ThemeResource AttentionBrush}" Visibility="{x:Bind v:ViewHelpers.Visible(HasNote)}" />
-                                                        </StackPanel>
-                                                        <TextBlock Grid.Column="2" Text="{x:Bind StatusText, Mode=OneWay}" FontSize="12" VerticalAlignment="Center"
-                                                                   HorizontalAlignment="Right" MaxWidth="220" TextTrimming="CharacterEllipsis"
-                                                                   Foreground="{x:Bind v:ViewHelpers.PackageBrush(Installed, HasUpdate), Mode=OneWay}" />
-                                                    </Grid>
-                                                </DataTemplate>
-                                            </ItemsRepeater.ItemTemplate>
-                                        </ItemsRepeater>
-                                    </Border>
-                                </StackPanel>
-                            </DataTemplate>
-                        </ItemsRepeater.ItemTemplate>
-                    </ItemsRepeater>
                 </StackPanel>
-
+                <!-- A rolagem continua ativa durante a detecção/instalação; só a marcação fica bloqueada. -->
+                <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" BringIntoViewOnFocusChange="True">
+                    <StackPanel Spacing="16" Padding="0,0,8,16">
+                        <StackPanel Spacing="8" Margin="0,24" Visibility="{x:Bind v:ViewHelpers.Visible(Vm.NoResults), Mode=OneWay}">
+                            <TextBlock Text="{l:Tr Key=formatKit.noResults}" Style="{StaticResource SectionTitleText}" TextWrapping="Wrap"/>
+                            <TextBlock Text="{l:Tr Key=formatKit.noResultsHint}" Style="{StaticResource SecondaryText}" TextWrapping="Wrap"/>
+                            <Button Content="{l:Tr Key=formatKit.clearSearch}" Click="OnClearSearch" HorizontalAlignment="Left"/>
+                        </StackPanel>
+                        <ContentControl IsTabStop="False" HorizontalContentAlignment="Stretch" HorizontalAlignment="Stretch"
+                                        IsEnabled="{x:Bind v:FormatKitPage.CanEdit(Vm.Running, Vm.Loading), Mode=OneWay}">
+                        <ItemsRepeater ItemsSource="{x:Bind Vm.Groups, Mode=OneWay}">
+                            <ItemsRepeater.Layout><StackLayout Spacing="16"/></ItemsRepeater.Layout>
+                            <ItemsRepeater.ItemTemplate>
+                                <DataTemplate x:DataType="vm:PackageGroup">
+                                    <StackPanel Spacing="8">
+                                        <TextBlock Text="{x:Bind Category}" Style="{StaticResource SectionTitleText}" FontSize="14"/>
+                                        <Border Style="{StaticResource CardBorder}" Padding="4">
+                                            <ItemsRepeater ItemsSource="{x:Bind Items}">
+                                                <ItemsRepeater.ItemTemplate>
+                                                    <DataTemplate x:DataType="vm:PackageVm">
+                                                        <CheckBox IsChecked="{x:Bind Selected, Mode=TwoWay}" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch"
+                                                                  MinWidth="0" Padding="8,10" AutomationProperties.Name="{x:Bind Name}"
+                                                                  AutomationProperties.HelpText="{x:Bind StatusText, Mode=OneWay}">
+                                                            <StackPanel Spacing="4">
+                                                                <TextBlock Text="{x:Bind Name}" FontWeight="SemiBold" FontSize="13" TextWrapping="Wrap" Foreground="{ThemeResource TextPrimaryBrush}"/>
+                                                                <TextBlock Text="{x:Bind Description}" Style="{StaticResource SecondaryText}" FontSize="12" TextWrapping="Wrap"
+                                                                           Visibility="{x:Bind v:ViewHelpers.VisibleIfText(Description)}"/>
+                                                                <Grid ColumnSpacing="8">
+                                                                    <Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                                                                    <TextBlock Text="{x:Bind SourceText}" Style="{StaticResource CaptionText}"/>
+                                                                    <TextBlock Grid.Column="1" Text="{x:Bind StatusText, Mode=OneWay}" FontSize="12" TextWrapping="Wrap"
+                                                                               Foreground="{x:Bind v:ViewHelpers.PackageBrush(Installed, HasUpdate), Mode=OneWay}"/>
+                                                                </Grid>
+                                                                <TextBlock Text="{x:Bind Note}" Style="{StaticResource CaptionText}" TextWrapping="Wrap" TextTrimming="None"
+                                                                           Foreground="{ThemeResource AttentionBrush}" Visibility="{x:Bind v:ViewHelpers.Visible(HasNote)}"/>
+                                                            </StackPanel>
+                                                        </CheckBox>
+                                                    </DataTemplate>
+                                                </ItemsRepeater.ItemTemplate>
+                                            </ItemsRepeater>
+                                        </Border>
+                                    </StackPanel>
+                                </DataTemplate>
+                            </ItemsRepeater.ItemTemplate>
+                        </ItemsRepeater>
+                        </ContentControl>
+                    </StackPanel>
                 </ScrollViewer>
-
-                <!-- Instalação: sempre visível -->
-                <ScrollViewer x:Name="SideScroll" Grid.Row="1" Grid.Column="1" VerticalScrollBarVisibility="Auto">
-                <StackPanel x:Name="Side" Spacing="16" Padding="0,0,0,32">
+            </Grid>
+            <ScrollViewer x:Name="SideScroll" Grid.Column="1" VerticalScrollBarVisibility="Auto">
+                <StackPanel Spacing="16" Padding="0,0,0,8">
                     <Border Style="{StaticResource CardBorder}">
-                        <StackPanel Spacing="12">
-                            <TextBlock Text="{l:Tr Key=formatKit.install, Upper=True}" Style="{StaticResource EyebrowText}" />
-                            <Button Style="{StaticResource PrimaryButton}" HorizontalAlignment="Stretch" Content="{x:Bind Vm.InstallButtonText, Mode=OneWay}"
-                                    Command="{x:Bind Vm.InstallSelectedCommand}" IsEnabled="{x:Bind v:FormatKitPage.CanStart(Vm.Running, Vm.ToInstall, Vm.Loading), Mode=OneWay}" />
-                            <Button Style="{StaticResource QuietButton}" HorizontalAlignment="Stretch" Content="{x:Bind Vm.UpgradeButtonText, Mode=OneWay}"
-                                    Command="{x:Bind Vm.UpgradeSelectedCommand}" IsEnabled="{x:Bind v:FormatKitPage.CanStart(Vm.Running, Vm.ToUpgrade, Vm.Loading), Mode=OneWay}" />
-                            <TextBlock Text="{l:Tr Key=formatKit.installHint}" Style="{StaticResource CaptionText}" TextWrapping="Wrap" TextTrimming="None" />
+                        <StackPanel Spacing="10">
+                            <TextBlock Text="{l:Tr Key=formatKit.actions}" Style="{StaticResource SectionTitleText}"/>
+                            <!-- Empilhados na janela larga; lado a lado na estreita, para não roubar altura do catálogo. -->
+                            <Grid x:Name="ActionButtons" RowSpacing="10">
+                                <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition x:Name="ActionSecondColumn" Width="0"/></Grid.ColumnDefinitions>
+                                <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+                                <Button Style="{StaticResource PrimaryButton}" HorizontalAlignment="Stretch" Content="{x:Bind Vm.InstallButtonText, Mode=OneWay}"
+                                        Command="{x:Bind Vm.InstallSelectedCommand}" IsEnabled="{x:Bind v:FormatKitPage.CanStart(Vm.Running, Vm.ToInstall, Vm.Loading), Mode=OneWay}"/>
+                                <Button x:Name="UpgradeButton" Grid.Row="1" Style="{StaticResource QuietButton}" HorizontalAlignment="Stretch" Content="{x:Bind Vm.UpgradeButtonText, Mode=OneWay}"
+                                        ToolTipService.ToolTip="{l:Tr Key=formatKit.selectionHint}"
+                                        Command="{x:Bind Vm.UpgradeSelectedCommand}" IsEnabled="{x:Bind v:FormatKitPage.CanStart(Vm.Running, Vm.ToUpgrade, Vm.Loading), Mode=OneWay}"/>
+                            </Grid>
+                            <TextBlock x:Name="SelectionHint" Text="{l:Tr Key=formatKit.selectionHint}" Style="{StaticResource SecondaryText}" TextWrapping="Wrap"/>
+                            <Expander Header="{l:Tr Key=formatKit.howItWorks}" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch">
+                                <TextBlock Text="{l:Tr Key=formatKit.installHint}" Style="{StaticResource SecondaryText}" TextWrapping="Wrap"/>
+                            </Expander>
                         </StackPanel>
                     </Border>
-
                     <Border Style="{StaticResource CardBorder}" Visibility="{x:Bind v:ViewHelpers.Visible(Vm.HasJobs), Mode=OneWay}">
                         <StackPanel Spacing="10">
                             <Grid>
@@ -179,13 +192,14 @@
                                                               Visibility="{x:Bind v:ViewHelpers.Visible(Running), Mode=OneWay}" />
                                             </Grid>
                                             <StackPanel Grid.Column="1" Spacing="1">
-                                                <Grid>
-                                                    <TextBlock Text="{x:Bind Name}" FontSize="13" FontWeight="SemiBold" Foreground="{ThemeResource TextPrimaryBrush}" />
-                                                    <TextBlock Text="{x:Bind StateText, Mode=OneWay}" FontSize="12" HorizontalAlignment="Right"
+                                                <Grid ColumnSpacing="8">
+                                                    <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                                    <TextBlock Text="{x:Bind Name}" TextWrapping="Wrap" FontSize="13" FontWeight="SemiBold" Foreground="{ThemeResource TextPrimaryBrush}" />
+                                                    <TextBlock Grid.Column="1" Text="{x:Bind StateText, Mode=OneWay}" FontSize="12" HorizontalAlignment="Right"
                                                                Foreground="{x:Bind v:ViewHelpers.JobBrush(State), Mode=OneWay}" />
                                                 </Grid>
                                                 <TextBlock Text="{x:Bind Detail, Mode=OneWay}" Style="{StaticResource CaptionText}" TextWrapping="Wrap" TextTrimming="None"
-                                                           MaxLines="3" Visibility="{x:Bind v:ViewHelpers.VisibleIfText(Detail), Mode=OneWay}" IsTextSelectionEnabled="True" />
+                                                           MaxLines="3" ToolTipService.ToolTip="{x:Bind Detail, Mode=OneWay}" Visibility="{x:Bind v:ViewHelpers.VisibleIfText(Detail), Mode=OneWay}" IsTextSelectionEnabled="True" />
                                             </StackPanel>
                                         </Grid>
                                     </DataTemplate>
@@ -199,7 +213,7 @@
                         </StackPanel>
                     </Border>
                 </StackPanel>
-                </ScrollViewer>
-            </Grid>
+            </ScrollViewer>
+        </Grid>
     </Grid>
 </Page>

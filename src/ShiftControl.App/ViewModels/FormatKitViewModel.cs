@@ -108,6 +108,7 @@ public sealed partial class FormatKitViewModel : ObservableObject
             .Select(c => new PackageGroup(c, _all.Where(p => p.Package.Category == c).ToList()))
             .Where(g => g.Items.Count > 0).ToList();
         Profiles = [.. _catalog.Profiles.Select(p => new Choice<string>(p.Key, p.Name)), new Choice<string>("custom", L.Get("formatKit.profile.custom"))];
+        ApplySearch();
     }
 
     private static IReadOnlyList<string> SystemFactsSafe()
@@ -119,15 +120,20 @@ public sealed partial class FormatKitViewModel : ObservableObject
     [ObservableProperty] public partial IReadOnlyList<PackageGroup> Groups { get; set; }
     [ObservableProperty] public partial string Search { get; set; } = "";
 
-    partial void OnSearchChanged(string value)
+    partial void OnSearchChanged(string value) => ApplySearch();
+
+    private void ApplySearch()
     {
-        string query = value.Trim();
+        string query = Search.Trim();
         Groups = _catalog.Categories.Select(c => new PackageGroup(c, _all.Where(p =>
             p.Package.Category == c && (query.Length == 0 ||
             p.Name.Contains(query, StringComparison.OrdinalIgnoreCase) ||
             p.Id.Contains(query, StringComparison.OrdinalIgnoreCase) ||
             c.Contains(query, StringComparison.OrdinalIgnoreCase))).ToList()))
             .Where(g => g.Items.Count > 0).ToList();
+        NoResults = Groups.Count == 0;
+        ResultsText = L.F("formatKit.results", Groups.Sum(g => g.Items.Count), _all.Count);
+        UpdateHiddenSelection();
     }
     public IReadOnlyList<Choice<string>> Profiles { get; }
     public ObservableCollection<JobVm> Jobs { get; } = [];
@@ -139,6 +145,9 @@ public sealed partial class FormatKitViewModel : ObservableObject
     [ObservableProperty] public partial bool Running { get; set; }
     [ObservableProperty] public partial bool HasJobs { get; set; }
     [ObservableProperty] public partial string Summary { get; set; } = "";
+    [ObservableProperty] public partial bool NoResults { get; set; }
+    [ObservableProperty] public partial string ResultsText { get; set; } = "";
+    [ObservableProperty] public partial string HiddenSelectionText { get; set; } = "";
     [ObservableProperty] public partial string ReportText { get; set; } = "";
     [ObservableProperty] public partial bool HasFailures { get; set; }
     [ObservableProperty] public partial bool RebootRequired { get; set; }
@@ -203,7 +212,18 @@ public sealed partial class FormatKitViewModel : ObservableObject
         InstallButtonText = L.F("formatKit.installSelected", ToInstall);
         UpgradeButtonText = L.F("formatKit.upgradeSelected", ToUpgrade);
         Summary = L.F("formatKit.summary", _all.Count(p => p.Selected), _all.Count(p => p.Selected && p.Installed == true));
+        UpdateHiddenSelection();
     }
+
+    private void UpdateHiddenSelection()
+    {
+        var visible = Groups.SelectMany(g => g.Items).ToHashSet();
+        int hidden = _all.Count(p => p.Selected && !visible.Contains(p));
+        HiddenSelectionText = hidden > 0 ? L.F("formatKit.hiddenSelected", hidden) : "";
+    }
+
+    [RelayCommand]
+    private void ClearSearch() => Search = "";
 
     [RelayCommand]
     private void SelectAll() => SetSelection(true);

@@ -118,6 +118,29 @@ public class MaintenanceTests
     }
 
     [Fact]
+    public void Cleanup_never_deletes_through_a_junction_swapped_into_the_root()
+    {
+        using var root = new TempDir();
+        using var outside = new TempDir();
+        string victim = Path.Combine(outside.Path, "system-file.dll");
+        File.WriteAllText(victim, "must survive");
+        string link = Path.Combine(root.Path, "swapped");
+        var mklink = System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo("cmd.exe", $"/c mklink /J \"{link}\" \"{outside.Path}\"") { CreateNoWindow = true, UseShellExecute = false })!;
+        mklink.WaitForExit();
+        Assert.True(Directory.Exists(link), "junction was not created");
+        string inside = Path.Combine(root.Path, "old.tmp");
+        File.WriteAllText(inside, "temp");
+        var finalRoots = new[] { Cleaner.FinalPath(root.Path, directory: true)! };
+
+        // Passa pelo nome dentro da raiz, mas o caminho real do handle está fora dela.
+        Assert.False(Cleaner.DeleteWithinRoots(Path.Combine(link, "system-file.dll"), finalRoots));
+        Assert.True(File.Exists(victim));
+        Assert.True(Cleaner.DeleteWithinRoots(inside, finalRoots));
+        Assert.False(File.Exists(inside));
+        Directory.Delete(link);
+    }
+
+    [Fact]
     public void Session_with_boost_changed_midgame_is_marked_mixed()
     {
         var session = new ShiftControl.Overlay.SessionAggregator("game.exe", "Game", DateTimeOffset.UtcNow);
@@ -301,6 +324,16 @@ public class ReleaseTests
         await Assert.ThrowsAsync<InvalidDataException>(() => client.DownloadAsync(update with { Sha256 = new string('0', 64) }, dir.Path, ct: TestContext.Current.CancellationToken));
         await Assert.ThrowsAsync<InvalidDataException>(() => client.DownloadAsync(update with { InstallerUrl = "https://example.com/bad.exe" }, dir.Path, ct: TestContext.Current.CancellationToken));
         Assert.Single(Directory.GetFiles(dir.Path));
+
+        // Até o instalador iniciar, outro processo não pode trocar nem apagar o arquivo conferido.
+        using (ReleaseClient.OpenVerified(path, hash))
+        {
+            Assert.Throws<IOException>(() => File.WriteAllText(path, "swapped"));
+            Assert.Throws<IOException>(() => File.Delete(path));
+            Assert.Throws<IOException>(() => File.Move(path, path + ".old"));
+        }
+        File.WriteAllText(path, "tampered after download");
+        Assert.Throws<InvalidDataException>(() => ReleaseClient.OpenVerified(path, hash).Dispose());
     }
 
     [Fact]

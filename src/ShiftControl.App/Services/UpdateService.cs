@@ -27,7 +27,12 @@ public sealed class UpdateService(HttpClient http, ILogger<UpdateService> log)
             using var key = Registry.CurrentUser.OpenSubKey(@"Software\Microsoft\Windows\CurrentVersion\Uninstall\ShiftControl");
             bool installed = string.Equals(key?.GetValue("InstallLocation") as string, AppContext.BaseDirectory.TrimEnd(Path.DirectorySeparatorChar), StringComparison.OrdinalIgnoreCase);
             var start = UpdateInstallation.StartInfo(installer, AppContext.BaseDirectory, installed, visible: !exitApp);
-            using var process = System.Diagnostics.Process.Start(start) ?? throw new IOException("Installer did not start.");
+            System.Diagnostics.Process? process;
+            // Trava e reconfere o arquivo até o processo iniciar: entre o download e este ponto,
+            // um processo sem privilégio poderia trocá-lo e ganhar a elevação deste app.
+            using (ReleaseClient.OpenVerified(installer, update.Sha256!))
+                process = System.Diagnostics.Process.Start(start);
+            using var _ = process ?? throw new IOException("Installer did not start.");
             log.LogInformation("Installing update {Version} (automatic={Automatic}).", update.Version, automatic);
             installer = null; // The running installer owns its file until the next app launch.
             if (exitApp) App.ExitApp();

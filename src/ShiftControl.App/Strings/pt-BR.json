@@ -1,4 +1,13 @@
 {
+  "formatKit.results": "{0} de {1} programas na lista",
+  "formatKit.hiddenSelected": "{0} marcados fora da busca. Eles também entram na ação escolhida.",
+  "formatKit.selectionScope": "Marca todo o catálogo, incluindo os programas fora da busca.",
+  "formatKit.noResults": "Nenhum programa encontrado",
+  "formatKit.noResultsHint": "Tente buscar pelo nome, ID ou categoria. Sua seleção foi preservada.",
+  "formatKit.clearSearch": "Limpar busca",
+  "formatKit.actions": "Programas selecionados",
+  "formatKit.selectionHint": "Atualizar marcados usa apenas os programas selecionados com atualização disponível.",
+  "formatKit.howItWorks": "Como funciona",
   "nav.group.dashboard": "Dashboard",
   "nav.group.hardware": "Hardware",
   "nav.group.system": "Sistema",

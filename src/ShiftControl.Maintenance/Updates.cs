@@ -98,6 +98,29 @@ public sealed class ReleaseClient(HttpClient http, string repository)
         finally { if (File.Exists(temporary)) File.Delete(temporary); }
     }
 
+    /// <summary>
+    /// Abre o instalador baixado impedindo escrita, troca e exclusão por outros processos e reconfere o SHA-256
+    /// pelo mesmo handle. O app roda elevado e a pasta de download é gravável pelo usuário: mantenha o retorno
+    /// aberto até o instalador iniciar, para que nenhum processo sem privilégio troque o arquivo depois da conferência.
+    /// </summary>
+    public static FileStream OpenVerified(string path, string sha256)
+    {
+        var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read);
+        try
+        {
+            if ((File.GetAttributes(path) & FileAttributes.ReparsePoint) != 0)
+                throw new InvalidDataException("O instalador não pode ser um link.");
+            string actual = Convert.ToHexString(SHA256.HashData(stream));
+            if (!actual.Equals(sha256, StringComparison.OrdinalIgnoreCase)) throw new InvalidDataException("O SHA-256 do instalador não confere.");
+            return stream;
+        }
+        catch
+        {
+            stream.Dispose();
+            throw;
+        }
+    }
+
     public static bool IsNewer(string candidate, string current) => TryVersion(candidate, out var a) && TryVersion(current, out var b) && a > b;
     private static bool TryVersion(string text, out Version version)
     {

@@ -54,6 +54,17 @@ public sealed partial class FormatKitPage : Page
 
     public static bool CanStart(bool running, int count, bool loading) => !running && !loading && count > 0;
 
+    public static bool CanEdit(bool running, bool loading) => !running && !loading;
+
+    private void OnClearSearch(object sender, RoutedEventArgs e)
+    {
+        Vm.ClearSearchCommand.Execute(null);
+        PackageSearch.Focus(FocusState.Programmatic);
+    }
+
+    // Um InfoBar fechado continua no StackPanel com altura zero e ainda recebe o Spacing; recolhê-lo evita o vão.
+    private void OnInfoBarClosed(InfoBar sender, InfoBarClosedEventArgs args) => sender.Visibility = Visibility.Collapsed;
+
     public static Visibility ShowRetry(bool hasFailures, bool running) => hasFailures && !running ? Visibility.Visible : Visibility.Collapsed;
 
     private async void OnExport(object sender, RoutedEventArgs e)
@@ -107,5 +118,6 @@ public sealed partial class FormatKitPage : Page
         KitBar.Severity = severity;
         KitBar.Message = message;
         KitBar.IsOpen = true;
+        KitBar.Visibility = Visibility.Visible;
     }
 }
