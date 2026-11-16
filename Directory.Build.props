@@ -3,7 +3,7 @@
     <LangVersion>latest</LangVersion>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
-    <Version>0.3.1</Version>
+    <Version>0.3.2</Version>
     <Product>Shift Control</Product>
     <Company>Shift</Company>
     <Copyright>Shift Control</Copyright>
