@@ -12,6 +12,8 @@ public sealed class UndoService
 {
     public const string WinGetUninstall = "winget.uninstall";
     public const string StartupToggle = "startup.toggle";
+    /// <summary>Dados: caminhos dos backups .reg (um por linha) gravados ao remover sobras de um programa.</summary>
+    public const string RegistryRestore = "registry.restore";
 
     private readonly ChangeJournal _journal;
     private readonly WinGetClient _winget;
@@ -38,6 +40,7 @@ public sealed class UndoService
                 WinGetUninstall => await UninstallAsync(entry.UndoData!, ct),
                 GameBoostService.UndoKind => ((GameBoostService)_services.GetService(typeof(GameBoostService))!).RevertEntry(entry),
                 StartupToggle => RevertStartup(entry.UndoData!),
+                RegistryRestore => await RestoreRegistryAsync(entry.UndoData!, ct),
                 _ => (false, L.F("undo.unknownKind", entry.UndoKind)),
             };
             _journal.SetState(entry.Id, ok ? ChangeState.Reverted : ChangeState.RevertFailed, message);
@@ -63,6 +66,17 @@ public sealed class UndoService
         return Maintenance.Startup.SetEnabled(item, wasEnabled)
             ? (true, L.Get(wasEnabled ? "undo.startupEnabled" : "undo.startupDisabled"))
             : (false, L.Get("startup.needsAdmin"));
+    }
+
+    /// <summary>Reimporta só backups da pasta protegida e criados pelo app elevado (ver InstalledPrograms.RestoreRegistryAsync).</summary>
+    private static async Task<(bool, string)> RestoreRegistryAsync(string data, CancellationToken ct)
+    {
+        var files = data.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        // Elevado: só a pasta protegida e arquivos de Administradores. Sem elevação: a pasta do usuário (não há ganho de privilégio).
+        bool elevated = Maintenance.Shell.IsElevated;
+        var (restored, refused) = await Maintenance.InstalledPrograms.RestoreRegistryAsync(files, ViewModels.ProgramsViewModel.BackupRoot(create: false),
+            elevated ? null : _ => true, ct);
+        return refused == 0 ? (true, L.F("programs.undo.restored", restored)) : (false, L.F("programs.undo.refused", restored, refused));
     }
 
     private async Task<(bool, string)> UninstallAsync(string id, CancellationToken ct)

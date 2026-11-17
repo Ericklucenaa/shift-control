@@ -149,6 +149,9 @@
                 <NavigationViewItem Content="{l:Tr Key=nav.tasks}" Tag="tasks">
                     <NavigationViewItem.Icon><FontIcon Glyph="&#xE9D9;" /></NavigationViewItem.Icon>
                 </NavigationViewItem>
+                <NavigationViewItem Content="{l:Tr Key=nav.programs}" Tag="programs">
+                    <NavigationViewItem.Icon><FontIcon Glyph="&#xE71D;" /></NavigationViewItem.Icon>
+                </NavigationViewItem>
                 <NavigationViewItem Content="{l:Tr Key=nav.alerts}" Tag="alerts">
                     <NavigationViewItem.Icon>
                         <FontIcon Glyph="&#xEA8F;" />

@@ -32,6 +32,7 @@ public sealed partial class MainWindow : Window
         ["cleanup"] = typeof(CleanupPage),
         ["startup"] = typeof(StartupPage),
         ["tasks"] = typeof(TaskManagerPage),
+        ["programs"] = typeof(ProgramsPage),
         ["repair"] = typeof(RepairPage),
         ["network"] = typeof(NetworkPage),
         ["alerts"] = typeof(AlertsPage),

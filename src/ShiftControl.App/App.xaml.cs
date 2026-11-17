@@ -128,6 +128,7 @@ public partial class App : Application
         services.AddSingleton<CleanupViewModel>();
         services.AddSingleton<StartupViewModel>();
         services.AddSingleton<TaskManagerViewModel>();
+        services.AddSingleton<ProgramsViewModel>();
         services.AddSingleton<RepairViewModel>();
         services.AddSingleton<NetworkViewModel>();
         services.AddSingleton<AlertsViewModel>();
