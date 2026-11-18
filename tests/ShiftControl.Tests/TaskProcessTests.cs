@@ -38,6 +38,54 @@ public class TaskProcessTests
     }
 
     [Fact]
+    public void Same_name_processes_become_one_group_with_summed_usage()
+    {
+        TaskProcess[] items =
+        [
+            new(10,"chrome.exe",300,5,100,SessionId:1),
+            new(11,"Chrome.exe",100,20,300,SessionId:1,HasWindow:true),
+            new(12,"chrome.exe",200,null,null,SessionId:1),
+            new(20,"notepad.exe",400,40,50,SessionId:1,HasWindow:true),
+        ];
+        var groups = TaskProcesses.QueryGroups(items,null,ProcessSort.Cpu,false);
+        Assert.Equal(["notepad.exe","chrome.exe"],groups.Select(g=>g.Name.ToLowerInvariant())); // por CPU: 40% antes dos 25% somados
+        var chrome = groups[1];
+        Assert.Equal(3,chrome.Count);
+        Assert.Equal([11,12,10],chrome.Members.Select(m=>m.Pid));      // mais antigo primeiro
+        var row = chrome.Summary();
+        Assert.Equal(25,row.CpuPercent);
+        Assert.Equal(400,row.MemoryBytes);
+        Assert.True(row.HasWindow);
+        Assert.Equal(11,row.Pid);                                       // identidade do membro com janela
+        Assert.Equal("notepad.exe",Assert.Single(groups,g=>g.Count==1).Name);
+        Assert.Equal("chrome.exe",Assert.Single(TaskProcesses.QueryGroups(items,"12",ProcessSort.Name,false)).Name,ignoreCase:true); // PID de um membro
+        Assert.Equal(2,TaskProcesses.QueryGroups(items,null,ProcessSort.Name,true).Count);
+        Assert.Equal(["chrome.exe","notepad.exe"],TaskProcesses.QueryGroups(items,null,ProcessSort.Name,false).Select(g=>g.Name.ToLowerInvariant()));
+    }
+
+    [Fact]
+    public void Ending_a_group_goes_oldest_first_skips_protected_and_counts_each_process_once()
+    {
+        TaskProcess[] items =
+        [
+            new(10,"chrome.exe",300,SessionId:1),
+            new(11,"chrome.exe",100,SessionId:1),
+            new(12,"chrome.exe",200,SessionId:0),   // sessão de serviço: protegido
+            new(20,"notepad.exe",50,SessionId:1),   // outro nome: nunca tocado
+        ];
+        var chamados = new List<int>();
+        var first = TaskProcesses.EndAll("CHROME.EXE",items,p => { chamados.Add(p.Pid); return p.Pid == 10 ? EndProcessResult.Ending : EndProcessResult.Ended; });
+        Assert.Equal([11,10],chamados);
+        Assert.Equal(EndProcessResult.Protected,first.Single(r=>r.Item.Pid==12).Result);
+        // segunda passada: o 10 ainda estava saindo e aparece de novo; conta uma vez só
+        var second = TaskProcesses.EndAll("chrome.exe",[items[0],items[2]],_ => EndProcessResult.AlreadyExited);
+        var summary = TaskProcesses.Summarize("chrome.exe",first.Concat(second));
+        Assert.Equal(2,summary.Ended);
+        Assert.Equal(1,summary.Blocked);
+        Assert.Equal(3,summary.Total);
+    }
+
+    [Fact]
     public void Critical_names_services_and_app_itself_are_blocked_before_opening_handles()
     {
         foreach (var name in new[] { "csrss.exe", "LSASS.EXE", "explorer.exe", "ShiftControl.exe" })
@@ -71,6 +119,36 @@ public class TaskProcessIntegrationTests
         Assert.All(second.Where(p=>p.CpuPercent.HasValue),p=>Assert.InRange(p.CpuPercent!.Value,0,100));
         sampler.Reset();
         Assert.All(sampler.Sample(TestContext.Current.CancellationToken),p=>Assert.Null(p.CpuPercent));
+    }
+
+    [Fact]
+    public async Task Ending_a_group_closes_every_process_with_that_name()
+    {
+        // cópia do ping com nome único: o grupo não pode pegar nenhum outro processo da máquina
+        string pasta = Path.Combine(Path.GetTempPath(), "shiftcontrol-grupo-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(pasta);
+        string exe = Path.Combine(pasta, "sc-grupo-teste.exe");
+        File.Copy(Path.Combine(Environment.SystemDirectory, "ping.exe"), exe);
+        var filhos = Enumerable.Range(0, 3).Select(_ => Process.Start(new ProcessStartInfo(exe)
+        {
+            ArgumentList = { "-n", "60", "127.0.0.1" }, UseShellExecute = false, CreateNoWindow = true, RedirectStandardOutput = true,
+        })!).ToList();
+        try
+        {
+            var amostra = new ProcessSampler().Sample(TestContext.Current.CancellationToken);
+            var grupo = Assert.Single(TaskProcesses.QueryGroups(amostra, "sc-grupo-teste", ProcessSort.Name, false));
+            Assert.Equal(3, grupo.Count);
+            var resumo = TaskProcesses.Summarize(grupo.Name, TaskProcesses.EndAll(grupo.Name, amostra));
+            Assert.Equal(3, resumo.Ended);
+            Assert.Equal(0, resumo.Blocked);
+            foreach (var f in filhos)
+                await f.WaitForExitAsync(TestContext.Current.CancellationToken).WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+        }
+        finally
+        {
+            foreach (var f in filhos) { if (!f.HasExited) f.Kill(); f.Dispose(); }
+            try { Directory.Delete(pasta, true); } catch (IOException) { } catch (UnauthorizedAccessException) { }
+        }
     }
 
     [Fact]

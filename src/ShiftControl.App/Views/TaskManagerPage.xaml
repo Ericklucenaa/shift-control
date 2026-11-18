@@ -38,9 +38,10 @@
                         IsEnabled="{x:Bind Vm.CanEnd, Mode=OneWay}" AutomationProperties.AutomationId="tasks.end" />
             </Grid>
             <Grid ColumnSpacing="16">
-                <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
-                <CheckBox Content="{l:Tr Key=tasks.appsOnly}" IsChecked="{x:Bind Vm.AppsOnly, Mode=TwoWay}" AutomationProperties.AutomationId="tasks.appsOnly" />
-                <CheckBox Grid.Column="1" Content="{l:Tr Key=tasks.pause}" IsChecked="{x:Bind Vm.Paused, Mode=TwoWay}" AutomationProperties.AutomationId="tasks.pause" />
+                <Grid.ColumnDefinitions><ColumnDefinition Width="Auto" /><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
+                <CheckBox Content="{l:Tr Key=tasks.groupByName}" IsChecked="{x:Bind Vm.GroupByName, Mode=TwoWay}" AutomationProperties.AutomationId="tasks.groupByName" />
+                <CheckBox Grid.Column="1" Content="{l:Tr Key=tasks.appsOnly}" IsChecked="{x:Bind Vm.AppsOnly, Mode=TwoWay}" AutomationProperties.AutomationId="tasks.appsOnly" />
+                <CheckBox Grid.Column="2" Content="{l:Tr Key=tasks.pause}" IsChecked="{x:Bind Vm.Paused, Mode=TwoWay}" AutomationProperties.AutomationId="tasks.pause" />
             </Grid>
             <TextBlock Text="{x:Bind Vm.SelectionHint, Mode=OneWay}" Style="{StaticResource CaptionText}" TextWrapping="Wrap" TextTrimming="None" />
         </StackPanel>
@@ -62,7 +63,7 @@
                         <DataTemplate x:DataType="vm:TaskProcessVm">
                             <Grid Padding="8,9" ColumnSpacing="10">
                                 <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="70" /><ColumnDefinition Width="100" /><ColumnDefinition Width="60" /><ColumnDefinition Width="120" /></Grid.ColumnDefinitions>
-                                <TextBlock Text="{x:Bind Name, Mode=OneWay}" Style="{StaticResource BodyText}" TextWrapping="NoWrap" TextTrimming="CharacterEllipsis" />
+                                <TextBlock Text="{x:Bind DisplayName, Mode=OneWay}" Style="{StaticResource BodyText}" TextWrapping="NoWrap" TextTrimming="CharacterEllipsis" />
                                 <TextBlock Grid.Column="1" Text="{x:Bind CpuText, Mode=OneWay}" Style="{StaticResource MetricValueText}" FontWeight="Normal" />
                                 <TextBlock Grid.Column="2" Text="{x:Bind MemoryText, Mode=OneWay}" Style="{StaticResource MetricValueText}" />
                                 <TextBlock Grid.Column="3" Text="{x:Bind PidText, Mode=OneWay}" Style="{StaticResource MetricValueText}" FontWeight="Normal" Foreground="{ThemeResource TextSecondaryBrush}" />
@@ -87,7 +88,7 @@
             <Grid ColumnSpacing="12" Visibility="{x:Bind v:ViewHelpers.Visible(Vm.HasSelection), Mode=OneWay}">
                 <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
                 <StackPanel VerticalAlignment="Center" Spacing="2">
-                    <TextBlock Text="{x:Bind Vm.SelectedProcess.Name, Mode=OneWay}" Style="{StaticResource BodyText}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" TextWrapping="NoWrap" />
+                    <TextBlock Text="{x:Bind Vm.SelectedProcess.DisplayName, Mode=OneWay}" Style="{StaticResource BodyText}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" TextWrapping="NoWrap" />
                 </StackPanel>
                 <Button Grid.Column="1" Content="{l:Tr Key=tasks.details}" Style="{StaticResource QuietButton}" VerticalAlignment="Center" AutomationProperties.AutomationId="tasks.details">
                     <Button.Flyout>

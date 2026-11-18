@@ -19,6 +19,37 @@ public sealed record TaskProcess(int Pid, string Name, long? CreationFileTime, d
 
 public sealed record TaskProcessDetails(string? Path, string? Description, string? Publisher, DateTimeOffset? StartedAt, TimeSpan? CpuTime);
 
+/// <summary>Processos com o mesmo nome (ex.: os vários chrome.exe), vistos e encerrados juntos.</summary>
+public sealed record TaskProcessGroup(IReadOnlyList<TaskProcess> Members)
+{
+    public string Name => Members[0].Name;
+    public string Key => "group:" + Name.ToUpperInvariant();
+    public int Count => Members.Count;
+    public bool CanEnd => Members.Any(m => m.CanEnd);
+
+    /// <summary>Uma linha com os totais do grupo. A identidade (PID, horário de criação) é a do membro com janela, ou a
+    /// do mais antigo: ela só serve para detalhes e ordenação; o encerramento usa os membros, um a um.</summary>
+    public TaskProcess Summary()
+    {
+        var head = Members.FirstOrDefault(m => m.HasWindow) ?? Members[0];
+        return head with
+        {
+            CpuPercent = Members.Any(m => m.CpuPercent.HasValue) ? Math.Clamp(Members.Sum(m => m.CpuPercent ?? 0), 0, 100) : null,
+            MemoryBytes = Members.Any(m => m.MemoryBytes.HasValue) ? Members.Sum(m => m.MemoryBytes ?? 0) : null,
+            PrivateBytes = Members.Any(m => m.PrivateBytes.HasValue) ? Members.Sum(m => m.PrivateBytes ?? 0) : null,
+            Threads = Members.Any(m => m.Threads.HasValue) ? Members.Sum(m => m.Threads ?? 0) : null,
+            HasWindow = Members.Any(m => m.HasWindow),
+            NotResponding = Members.Any(m => m.NotResponding),
+        };
+    }
+}
+
+/// <summary>Resultado de encerrar todos os processos de um nome.</summary>
+public sealed record GroupEndResult(string Name, int Ended, int Blocked)
+{
+    public int Total => Ended + Blocked;
+}
+
 /// <summary>Uma amostragem por intervalo, sem reter handles. CPU normalizada pela capacidade total do PC.</summary>
 public sealed class ProcessSampler
 {
@@ -100,6 +131,52 @@ public static class TaskProcesses
             ProcessSort.Pid => items.OrderBy(p => p.Pid),
             _ => items.OrderBy(p => p.Name, StringComparer.OrdinalIgnoreCase),
         }).ThenBy(p => p.Name, StringComparer.OrdinalIgnoreCase).ThenBy(p => p.Pid).ToList();
+    }
+
+    /// <summary>Um grupo por nome de executável (sem diferenciar maiúsculas). A busca acha o grupo pelo nome ou pelo PID de
+    /// qualquer membro; a ordenação usa os totais do grupo.</summary>
+    public static IReadOnlyList<TaskProcessGroup> QueryGroups(IEnumerable<TaskProcess> source, string? search, ProcessSort sort, bool appsOnly)
+    {
+        var groups = source.GroupBy(p => p.Name, StringComparer.OrdinalIgnoreCase)
+            .Select(g => new TaskProcessGroup(g.OrderBy(p => p.CreationFileTime ?? long.MaxValue).ThenBy(p => p.Pid).ToList()));
+        if (appsOnly) groups = groups.Where(g => g.Members.Any(m => m.HasWindow));
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            string text = search.Trim();
+            groups = groups.Where(g => g.Name.Contains(text, StringComparison.OrdinalIgnoreCase)
+                || g.Members.Any(m => m.Pid.ToString().Contains(text, StringComparison.Ordinal)));
+        }
+        var list = groups.Select(g => (Group: g, Row: g.Summary())).ToList();
+        IEnumerable<(TaskProcessGroup Group, TaskProcess Row)> ordered = sort switch
+        {
+            ProcessSort.Cpu => list.OrderByDescending(x => x.Row.CpuPercent),
+            ProcessSort.Memory => list.OrderByDescending(x => x.Row.MemoryBytes),
+            ProcessSort.Pid => list.OrderBy(x => x.Group.Members.Min(m => m.Pid)),
+            _ => list.OrderBy(x => x.Group.Name, StringComparer.OrdinalIgnoreCase),
+        };
+        return ordered.Select(x => x.Group).ToList();
+    }
+
+    /// <summary>Encerra todos os processos deste nome que estão na lista, o mais antigo primeiro (no Chrome e
+    /// parecidos, o processo principal: os filhos costumam sair junto). Cada um passa pelas mesmas verificações de
+    /// <see cref="End"/>: protegidos, de serviço ou cuja identidade mudou nunca são tocados.</summary>
+    public static IReadOnlyList<(TaskProcess Item, EndProcessResult Result)> EndAll(string name, IEnumerable<TaskProcess> current,
+        Func<TaskProcess, EndProcessResult>? end = null)
+    {
+        end ??= End;
+        return current.Where(p => string.Equals(p.Name, name, StringComparison.OrdinalIgnoreCase))
+            .OrderBy(p => p.CreationFileTime ?? long.MaxValue).ThenBy(p => p.Pid)
+            .Select(p => (p, p.CanEnd ? end(p) : EndProcessResult.Protected)).ToList();
+    }
+
+    /// <summary>Conta cada processo uma vez, pelo último resultado (numa segunda passada, um processo que estava
+    /// "saindo" aparece de novo e não pode contar duas vezes).</summary>
+    public static GroupEndResult Summarize(string name, IEnumerable<(TaskProcess Item, EndProcessResult Result)> results)
+    {
+        var last = new Dictionary<string, EndProcessResult>();
+        foreach (var (item, result) in results) last[item.Key] = result;
+        int ended = last.Values.Count(r => r is EndProcessResult.Ended or EndProcessResult.Ending or EndProcessResult.AlreadyExited);
+        return new(name, ended, last.Count - ended);
     }
 
     public static TaskProcessDetails? Details(TaskProcess item)
