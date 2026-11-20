@@ -19,6 +19,7 @@ public sealed partial class MainWindow : Window
     {
         ["overview"] = typeof(DashboardPage),
         ["history"] = typeof(HistoryPage),
+        ["components"] = typeof(ComponentsPage),
         ["sensors"] = typeof(SensorsPage),
         ["overlay"] = typeof(OverlayPage),
         ["sessions"] = typeof(SessionsPage),
@@ -186,6 +187,7 @@ public sealed partial class MainWindow : Window
         ["formatkit"] = "nav.formatKit",
         ["migration"] = "nav.migration",
         ["checks"] = "nav.checks",
+        ["components"] = "nav.components",
         ["cleanup"] = "nav.cleanup",
         ["startup"] = "nav.startup",
         ["repair"] = "nav.repair",

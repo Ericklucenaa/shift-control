@@ -95,7 +95,7 @@ public static partial class SystemFactsProbe
 
     #endregion
 
-    private static List<MemoryModuleFact> ReadMemory() =>
+    internal static List<MemoryModuleFact> ReadMemory() =>
         Wmi.All("SELECT Capacity, Speed, ConfiguredClockSpeed, PartNumber, Manufacturer FROM Win32_PhysicalMemory", o => new MemoryModuleFact(
             Convert.ToUInt64(o["Capacity"] ?? 0UL),
             Convert.ToInt32(o["Speed"] ?? 0),
@@ -103,7 +103,7 @@ public static partial class SystemFactsProbe
             (o["PartNumber"] as string)?.Trim(),
             (o["Manufacturer"] as string)?.Trim()));
 
-    private static List<string> ReadGpus() =>
+    internal static List<string> ReadGpus() =>
         Wmi.All("SELECT Name FROM Win32_VideoController", o => (o["Name"] as string ?? "").Trim()).Where(n => n.Length > 0).Distinct().ToList();
 
     private static GameSettingsFact ReadGameSettings()

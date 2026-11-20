@@ -43,11 +43,17 @@ internal static class SystemInfoReader
             ubr > 0 ? $"{build}.{ubr}" : build,
             IsElevated(),
             IsPawnIoInstalled(),
-            Wmi.First("SELECT Manufacturer, Product FROM Win32_BaseBoard",
-                o => Join(o["Manufacturer"], o["Product"])),
-            Wmi.First("SELECT Manufacturer, SMBIOSBIOSVersion FROM Win32_BIOS",
-                o => Join(o["Manufacturer"], o["SMBIOSBIOSVersion"])));
+            ReadMotherboard(),
+            ReadBios());
     }
+
+    internal static string? ReadMotherboard() =>
+        Wmi.First("SELECT Manufacturer, Product FROM Win32_BaseBoard",
+            o => Join(o["Manufacturer"], o["Product"]));
+
+    internal static string? ReadBios() =>
+        Wmi.First("SELECT Manufacturer, SMBIOSBIOSVersion FROM Win32_BIOS",
+            o => Join(o["Manufacturer"], o["SMBIOSBIOSVersion"]));
 
     private static string? Join(params object?[] parts)
     {

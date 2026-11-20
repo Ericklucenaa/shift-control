@@ -73,6 +73,11 @@
                 </NavigationViewItem>
 
                 <NavigationViewItemHeader Content="{l:Tr Key=nav.group.hardware}" Tag="hardware" />
+                <NavigationViewItem Content="{l:Tr Key=nav.components}" Tag="components">
+                    <NavigationViewItem.Icon>
+                        <FontIcon Glyph="&#xE770;" />
+                    </NavigationViewItem.Icon>
+                </NavigationViewItem>
                 <NavigationViewItem Content="{l:Tr Key=nav.sensors}" Tag="sensors" ToolTipService.ToolTip="Ctrl+3">
                     <NavigationViewItem.Icon>
                         <FontIcon Glyph="&#xE9CA;" />
