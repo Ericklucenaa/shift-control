@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Logging;
 using Microsoft.UI;
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
@@ -19,14 +20,16 @@ public sealed class TrayPanel
     private readonly MonitoringEngine _engine;
     private readonly OverlayService _overlay;
     private readonly GameBoostService _boost;
+    private readonly ILogger<TrayPanel> _log;
     private Window? _window;
     private DispatcherTimer? _timer;
     private TextBlock? _cpu, _gpu, _mem, _boostState;
     private ToggleSwitch? _overlaySwitch, _boostSwitch;
     private bool _updating;
 
-    public TrayPanel(MonitoringEngine engine, OverlayService overlay, GameBoostService boost)
+    public TrayPanel(MonitoringEngine engine, OverlayService overlay, GameBoostService boost, ILogger<TrayPanel> log)
     {
+        _log = log;
         _engine = engine;
         _overlay = overlay;
         _boost = boost;
@@ -45,7 +48,17 @@ public sealed class TrayPanel
             return;
         }
         if (Environment.TickCount64 - _closedByFocusLoss < ReopenGuardMs) return;
-        Open(cursorX, cursorY);
+        try { Open(cursorX, cursorY); }
+        catch (Exception ex)
+        {
+            // Ex.: "Invalid window handle" do AppWindow quando a janela é destruída durante a abertura.
+            // Descarta a janela pela metade para o próximo clique abrir do zero, em vez de fechar o app.
+            _log.LogWarning(ex, "Não foi possível abrir o mini-painel da bandeja.");
+            var broken = _window;
+            _window = null;
+            _timer?.Stop();
+            try { broken?.Close(); } catch (Exception closeEx) { _log.LogDebug(closeEx, "Falha ao descartar o mini-painel."); }
+        }
     }
 
     private void Open(int x, int y)

@@ -99,6 +99,22 @@ public sealed partial class TrayService : IDisposable
         Shell_NotifyIconW(1, ref d);
     }
 
+    /// <summary>
+    /// Executa o comando fora do WindowProc: uma exceção dentro de um callback nativo derruba o processo
+    /// sem passar por nenhum tratador (era o que fechava o app ao clicar no ícone), e criar janelas WinUI
+    /// no meio do despacho de uma mensagem Win32 é frágil. Na fila da interface, o erro vira só um registro.
+    /// </summary>
+    private void Raise(TrayCommand cmd, int x, int y)
+    {
+        void Run()
+        {
+            try { Command?.Invoke(cmd, x, y); }
+            catch (Exception ex) { _log.LogError(ex, "Falha ao executar o comando da bandeja {Command}.", cmd); }
+        }
+        var queue = Microsoft.UI.Dispatching.DispatcherQueue.GetForCurrentThread();
+        if (queue is null || !queue.TryEnqueue(Run)) Run();
+    }
+
     private const long DoubleEventWindowMs = 250;
     private long _lastClick = -DoubleEventWindowMs;
 
@@ -117,13 +133,13 @@ public sealed partial class TrayService : IDisposable
                     long now = Environment.TickCount64;
                     if (now - _lastClick < DoubleEventWindowMs) break;
                     _lastClick = now;
-                    Command?.Invoke(TrayCommand.MiniPanel, x, y);
+                    Raise(TrayCommand.MiniPanel, x, y);
                     break;
                 case 0x007B: // WM_CONTEXTMENU
                     ShowMenu(x, y);
                     break;
                 case 0x0405: // NIN_BALLOONUSERCLICK
-                    Command?.Invoke(TrayCommand.Open, x, y);
+                    Raise(TrayCommand.Open, x, y);
                     break;
             }
             return 0;
@@ -151,7 +167,7 @@ public sealed partial class TrayService : IDisposable
         DestroyMenu(menu);
         PostMessageW(_hwnd, 0, 0, 0);
         var cmd = id switch { IdOpen => TrayCommand.Open, IdOverlay => TrayCommand.ToggleOverlay, IdBoost => TrayCommand.ToggleBoost, IdExit => TrayCommand.Exit, _ => (TrayCommand?)null };
-        if (cmd is { } c) Command?.Invoke(c, x, y);
+        if (cmd is { } c) Raise(c, x, y);
     }
 
     public void Dispose()
