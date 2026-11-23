@@ -32,14 +32,17 @@
         </Border>
 
         <Grid Grid.Row="3" ColumnSpacing="12">
-            <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="190" /><ColumnDefinition Width="Auto" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
+            <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /><ColumnDefinition Width="190" /><ColumnDefinition Width="Auto" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
             <TextBox Text="{x:Bind Vm.Search, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" PlaceholderText="{l:Tr Key=programs.search}"
                      AutomationProperties.AutomationId="programs.search" AutomationProperties.Name="{l:Tr Key=programs.search}" />
-            <ComboBox Grid.Column="1" ItemsSource="{x:Bind Vm.SortOptions}" SelectedItem="{x:Bind Vm.Sort, Mode=TwoWay}" HorizontalAlignment="Stretch"
+            <ComboBox Grid.Column="1" ItemsSource="{x:Bind Vm.DriveOptions}" SelectedItem="{x:Bind Vm.Drive, Mode=TwoWay}" MinWidth="190" MaxWidth="300"
+                      ToolTipService.ToolTip="{l:Tr Key=programs.driveLabel}"
+                      AutomationProperties.AutomationId="programs.drive" AutomationProperties.Name="{l:Tr Key=programs.driveLabel}" />
+            <ComboBox Grid.Column="2" ItemsSource="{x:Bind Vm.SortOptions}" SelectedItem="{x:Bind Vm.Sort, Mode=TwoWay}" HorizontalAlignment="Stretch"
                       AutomationProperties.AutomationId="programs.sort" AutomationProperties.Name="{l:Tr Key=programs.sortLabel}" />
-            <Button Grid.Column="2" Content="{l:Tr Key=common.refresh}" Command="{x:Bind Vm.RefreshCommand}" Style="{StaticResource QuietButton}"
+            <Button Grid.Column="3" Content="{l:Tr Key=common.refresh}" Command="{x:Bind Vm.RefreshCommand}" Style="{StaticResource QuietButton}"
                     AutomationProperties.AutomationId="programs.refresh" />
-            <Button Grid.Column="3" Content="{l:Tr Key=programs.uninstall}" Style="{StaticResource PrimaryButton}" Click="OnUninstall"
+            <Button Grid.Column="4" Content="{l:Tr Key=programs.uninstall}" Style="{StaticResource PrimaryButton}" Click="OnUninstall"
                     IsEnabled="{x:Bind Vm.CanUninstall, Mode=OneWay}" AutomationProperties.AutomationId="programs.uninstall" />
         </Grid>
 
@@ -48,12 +51,13 @@
                 <Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="*" /><RowDefinition Height="Auto" /></Grid.RowDefinitions>
                 <Grid x:Name="Header" Padding="24,10" ColumnSpacing="12" BorderThickness="0,0,0,1" BorderBrush="{ThemeResource CardBorderBrush}">
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*" /><ColumnDefinition x:Name="HeadVersion" Width="130" /><ColumnDefinition Width="90" /><ColumnDefinition x:Name="HeadDate" Width="100" />
+                        <ColumnDefinition Width="*" /><ColumnDefinition x:Name="HeadVersion" Width="130" /><ColumnDefinition Width="48" /><ColumnDefinition Width="90" /><ColumnDefinition x:Name="HeadDate" Width="100" />
                     </Grid.ColumnDefinitions>
                     <TextBlock Text="{l:Tr Key=programs.col.name}" Style="{StaticResource CaptionText}" />
                     <TextBlock Grid.Column="1" Text="{l:Tr Key=programs.col.version}" Style="{StaticResource CaptionText}" />
-                    <TextBlock Grid.Column="2" Text="{l:Tr Key=programs.col.size}" Style="{StaticResource CaptionText}" HorizontalAlignment="Right" />
-                    <TextBlock Grid.Column="3" Text="{l:Tr Key=programs.col.installed}" Style="{StaticResource CaptionText}" HorizontalAlignment="Right" />
+                    <TextBlock Grid.Column="2" Text="{l:Tr Key=programs.col.drive}" Style="{StaticResource CaptionText}" />
+                    <TextBlock Grid.Column="3" Text="{l:Tr Key=programs.col.size}" Style="{StaticResource CaptionText}" HorizontalAlignment="Right" />
+                    <TextBlock Grid.Column="4" Text="{l:Tr Key=programs.col.installed}" Style="{StaticResource CaptionText}" HorizontalAlignment="Right" />
                 </Grid>
                 <ListView x:Name="ProgramList" Grid.Row="1" ItemsSource="{x:Bind Vm.Programs}" SelectedItem="{x:Bind Vm.SelectedProgram, Mode=TwoWay}"
                           SelectionMode="Single" HorizontalContentAlignment="Stretch" ContextRequested="OnContextRequested"
@@ -63,7 +67,7 @@
                         <DataTemplate x:DataType="vm:ProgramRowVm">
                             <Grid Padding="8,8" ColumnSpacing="12" AutomationProperties.Name="{x:Bind Name}">
                                 <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*" /><ColumnDefinition Width="130" /><ColumnDefinition Width="90" /><ColumnDefinition Width="100" />
+                                    <ColumnDefinition Width="*" /><ColumnDefinition Width="130" /><ColumnDefinition Width="48" /><ColumnDefinition Width="90" /><ColumnDefinition Width="100" />
                                 </Grid.ColumnDefinitions>
                                 <StackPanel Spacing="1" VerticalAlignment="Center">
                                     <TextBlock Text="{x:Bind Name}" Style="{StaticResource BodyText}" TextWrapping="NoWrap" TextTrimming="CharacterEllipsis"
@@ -72,8 +76,10 @@
                                 </StackPanel>
                                 <TextBlock Grid.Column="1" Text="{x:Bind VersionText}" Style="{StaticResource CaptionText}" VerticalAlignment="Center"
                                            TextTrimming="CharacterEllipsis" ToolTipService.ToolTip="{x:Bind VersionText}" />
-                                <TextBlock Grid.Column="2" Text="{x:Bind SizeText}" Style="{StaticResource MetricValueText}" FontWeight="Normal" VerticalAlignment="Center" />
-                                <TextBlock Grid.Column="3" Text="{x:Bind DateText}" Style="{StaticResource CaptionText}" HorizontalAlignment="Right" VerticalAlignment="Center" />
+                                <TextBlock Grid.Column="2" Text="{x:Bind DriveText}" Style="{StaticResource CaptionText}" VerticalAlignment="Center" />
+                                <TextBlock Grid.Column="3" Text="{x:Bind SizeText}" Style="{StaticResource MetricValueText}" FontWeight="Normal" VerticalAlignment="Center"
+                                           ToolTipService.ToolTip="{x:Bind SizeTip}" />
+                                <TextBlock Grid.Column="4" Text="{x:Bind DateText}" Style="{StaticResource CaptionText}" HorizontalAlignment="Right" VerticalAlignment="Center" />
                             </Grid>
                         </DataTemplate>
                     </ListView.ItemTemplate>

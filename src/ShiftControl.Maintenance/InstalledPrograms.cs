@@ -25,7 +25,9 @@ public sealed record InstalledProgram(
     string UninstallString,
     string? QuietUninstallString,
     string? MsiProductCode,
-    string? DisplayIcon)
+    string? DisplayIcon,
+    string? MsiFilePath = null,
+    bool SizeMeasured = false)
 {
     public string Key => $"{Scope}|{KeyName}";
     public bool IsMsi => MsiProductCode is not null;
@@ -93,7 +95,76 @@ public static partial class InstalledPrograms
         Read(list, RegistryHive.LocalMachine, RegistryView.Registry32, ProgramScope.Machine32);
         Read(list, RegistryHive.CurrentUser, RegistryView.Registry64, ProgramScope.User);
         // O mesmo programa registrado em duas vistas aparece uma vez só.
-        return list.DistinctBy(p => (p.Name.ToUpperInvariant(), p.Version, p.Publisher)).ToList();
+        var result = list.DistinctBy(p => (p.Name.ToUpperInvariant(), p.Version, p.Publisher)).ToList();
+        // MSI que não informa pasta, ícone nem desinstalador próprio: o Windows Installer sabe onde pôs os arquivos.
+        var unknown = result.Where(p => p.IsMsi && DriveOf(p) is null).Select(p => p.MsiProductCode!).ToList();
+        if (unknown.Count > 0)
+        {
+            var files = MsiFilePaths(unknown);
+            for (int i = 0; i < result.Count; i++)
+                if (result[i].MsiProductCode is { } code && files.TryGetValue(code, out var file)) result[i] = result[i] with { MsiFilePath = file };
+        }
+        return result;
+    }
+
+    private const string MsiUserData = @"SOFTWARE\Microsoft\Windows\CurrentVersion\Installer\UserData";
+
+    /// <summary>
+    /// Um arquivo instalado por cada produto MSI pedido, lido do registro de componentes do Windows Installer
+    /// (UserData\&lt;SID&gt;\Components\&lt;componente&gt;: um valor por produto, com o caminho do arquivo).
+    /// Prefere arquivos fora da pasta do Windows, que dizem melhor em que disco o programa está.
+    /// </summary>
+    internal static Dictionary<string, string> MsiFilePaths(IEnumerable<string> productCodes)
+    {
+        var byPacked = productCodes.Select(c => (Code: c, Packed: PackGuid(c))).Where(x => x.Packed is not null)
+            .DistinctBy(x => x.Packed!, StringComparer.OrdinalIgnoreCase).ToDictionary(x => x.Packed!, x => x.Code, StringComparer.OrdinalIgnoreCase);
+        var found = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        var settled = new HashSet<string>(StringComparer.OrdinalIgnoreCase); // já têm um arquivo fora da pasta do Windows
+        try
+        {
+            using var root = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Registry64);
+            using var userData = root.OpenSubKey(MsiUserData);
+            if (userData is null) return found;
+            foreach (string sid in userData.GetSubKeyNames())
+            {
+                using var components = OpenOrNull(userData, sid + @"\Components");
+                if (components is null) continue;
+                foreach (string component in components.GetSubKeyNames())
+                {
+                    if (settled.Count == byPacked.Count) return found;
+                    using var key = OpenOrNull(components, component);
+                    if (key is null) continue;
+                    foreach (string packed in key.GetValueNames())
+                    {
+                        if (!byPacked.TryGetValue(packed, out var code) || settled.Contains(code)) continue;
+                        if (key.GetValue(packed) is not string raw || DriveLetter(raw) is null) continue; // ex.: "02:\..." é chave do registro
+                        string path = raw.Length > 3 && raw[3] == '?' ? raw.Remove(3, 1) : raw; // "C:\?WINDOWS\..." (arquivo compartilhado)
+                        if (!IsStoredByWindows(path)) { found[code] = path; settled.Add(code); }
+                        else found.TryAdd(code, path);
+                    }
+                }
+            }
+        }
+        catch (Exception ex) when (ex is System.Security.SecurityException or UnauthorizedAccessException or IOException) { }
+        return found;
+    }
+
+    private static RegistryKey? OpenOrNull(RegistryKey parent, string name)
+    {
+        try { return parent.OpenSubKey(name); }
+        catch (Exception ex) when (ex is System.Security.SecurityException or UnauthorizedAccessException or IOException) { return null; }
+    }
+
+    /// <summary>GUID no formato "compactado" do Windows Installer: {12345678-ABCD-...} vira 87654321DCBA...</summary>
+    internal static string? PackGuid(string code)
+    {
+        if (!Guid.TryParse(code, out var guid)) return null;
+        string h = guid.ToString("N").ToUpperInvariant();
+        static string Rev(string x) => new(x.Reverse().ToArray());
+        var sb = new System.Text.StringBuilder(32);
+        sb.Append(Rev(h[..8])).Append(Rev(h[8..12])).Append(Rev(h[12..16]));
+        for (int i = 16; i < 32; i += 2) sb.Append(h[i + 1]).Append(h[i]);
+        return sb.ToString();
     }
 
     private static void Read(List<InstalledProgram> list, RegistryHive hive, RegistryView view, ProgramScope scope)
@@ -144,11 +215,16 @@ public static partial class InstalledPrograms
     [GeneratedRegex(@"\{[0-9A-Fa-f]{8}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{12}\}")]
     private static partial Regex MsiCodeRegex();
 
-    public static IReadOnlyList<InstalledProgram> Query(IEnumerable<InstalledProgram> all, string? search, ProgramSort sort)
+    /// <summary>Valor do filtro de disco para programas cujo local não dá para identificar.</summary>
+    public const string UnknownDrive = "?";
+
+    /// <param name="drive">null = todos; "C:", "D:"…; ou <see cref="UnknownDrive"/>.</param>
+    public static IReadOnlyList<InstalledProgram> Query(IEnumerable<InstalledProgram> all, string? search, ProgramSort sort, string? drive = null)
     {
         string q = search?.Trim() ?? "";
         var items = all.Where(p => q.Length == 0 || p.Name.Contains(q, StringComparison.OrdinalIgnoreCase)
             || (p.Publisher?.Contains(q, StringComparison.OrdinalIgnoreCase) ?? false));
+        if (drive is not null) items = items.Where(p => string.Equals(DriveOf(p) ?? UnknownDrive, drive, StringComparison.OrdinalIgnoreCase));
         return (sort switch
         {
             ProgramSort.Size => items.OrderByDescending(p => p.SizeBytes ?? -1).ThenBy(p => p.Name, StringComparer.CurrentCultureIgnoreCase),
@@ -156,6 +232,134 @@ public static partial class InstalledPrograms
             ProgramSort.Publisher => items.OrderBy(p => p.Publisher ?? "￿", StringComparer.CurrentCultureIgnoreCase).ThenBy(p => p.Name, StringComparer.CurrentCultureIgnoreCase),
             _ => items.OrderBy(p => p.Name, StringComparer.CurrentCultureIgnoreCase),
         }).ToList();
+    }
+
+    /// <summary>
+    /// Disco onde o programa está ("C:", "D:"…), ou null se não der para saber (ex.: MSI que só informa o msiexec).
+    /// Usa a pasta de instalação; sem ela, o ícone (em geral o executável do programa) e depois o desinstalador.
+    /// Ícones e desinstaladores guardados pelo Windows (pasta do Windows, cache de pacotes) ficam no disco do sistema
+    /// mesmo quando o programa está em outro, então só valem quando não há nenhuma outra pista.
+    /// </summary>
+    public static string? DriveOf(InstalledProgram p)
+    {
+        string? stored = null;
+        foreach (var path in LocationCandidates(p))
+        {
+            if (DriveLetter(path) is not { } d) continue;
+            if (!IsStoredByWindows(path)) return d;
+            stored ??= d;
+        }
+        return stored;
+    }
+
+    private static IEnumerable<string> LocationCandidates(InstalledProgram p)
+    {
+        if (Expand(p.InstallLocation) is { Length: > 0 } loc) yield return loc;
+        if (Expand(p.DisplayIcon?.Split(',')[0].Trim().Trim('"')) is { Length: > 0 } icon) yield return icon;
+        if (SplitCommand(p.UninstallString)?.File is { } exe && Expand(exe) is { Length: > 0 } e) yield return e;
+        if (p.MsiFilePath is { Length: > 0 } msi) yield return msi;
+    }
+
+    private static string? Expand(string? path) => string.IsNullOrWhiteSpace(path) ? null : Environment.ExpandEnvironmentVariables(path.Trim());
+
+    private static string? DriveLetter(string path) =>
+        path.Length >= 3 && char.IsAsciiLetter(path[0]) && path[1] == ':' && (path[2] == '\\' || path[2] == '/')
+            ? char.ToUpperInvariant(path[0]) + ":" : null;
+
+    private static bool IsStoredByWindows(string path)
+    {
+        string windows = Environment.GetFolderPath(Environment.SpecialFolder.Windows);
+        string cache = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "Package Cache");
+        return (windows.Length > 0 && path.StartsWith(windows + "\\", StringComparison.OrdinalIgnoreCase))
+            || path.StartsWith(cache + "\\", StringComparison.OrdinalIgnoreCase);
+    }
+
+    /// <summary>
+    /// Pasta que pode ser medida quando o programa não informa o tamanho: a de instalação ou, sem ela, a do executável
+    /// (ícone ou desinstalador). Nunca uma pasta ampla (raiz do disco, Arquivos de Programas, perfil, AppData, Windows),
+    /// que somaria outros programas.
+    /// </summary>
+    public static string? MeasurableFolder(InstalledProgram p)
+    {
+        string? folder = Expand(p.InstallLocation);
+        if (folder is null)
+        {
+            string? exe = Expand(p.DisplayIcon?.Split(',')[0].Trim().Trim('"')) is { } icon && !IsStoredByWindows(icon) && Path.IsPathFullyQualified(icon)
+                ? icon
+                : SplitCommand(p.UninstallString)?.File is { } u && Expand(u) is { } e && !IsStoredByWindows(e) && Path.IsPathFullyQualified(e) ? e : null;
+            folder = exe is null ? null : Path.GetDirectoryName(exe);
+        }
+        if (folder is null || DriveLetter(folder.Length == 2 ? folder + "\\" : folder) is null || SafeFull(folder) is not { } full) return null;
+        if (IsStoredByWindows(full + "\\") || IsBroadFolder(full)) return null;
+        return Directory.Exists(full) ? full : null;
+    }
+
+    private static bool IsBroadFolder(string full)
+    {
+        if (full.Length <= 3) return true; // "C:" / "C:\"
+        string F(Environment.SpecialFolder f) => Environment.GetFolderPath(f).TrimEnd(Path.DirectorySeparatorChar);
+        string profile = F(Environment.SpecialFolder.UserProfile);
+        string[] broad =
+        [
+            F(Environment.SpecialFolder.Windows), F(Environment.SpecialFolder.ProgramFiles), F(Environment.SpecialFolder.ProgramFilesX86),
+            F(Environment.SpecialFolder.CommonProgramFiles), F(Environment.SpecialFolder.CommonProgramFilesX86), F(Environment.SpecialFolder.CommonApplicationData),
+            profile, Path.GetDirectoryName(profile) ?? "", F(Environment.SpecialFolder.ApplicationData), F(Environment.SpecialFolder.LocalApplicationData),
+            Path.Combine(F(Environment.SpecialFolder.LocalApplicationData), "Programs"), F(Environment.SpecialFolder.Desktop),
+            F(Environment.SpecialFolder.MyDocuments), Path.Combine(profile, "Downloads"),
+        ];
+        return broad.Any(b => b.Length > 0 && string.Equals(b, full, StringComparison.OrdinalIgnoreCase));
+    }
+
+    /// <summary>
+    /// Soma os arquivos da pasta, sem seguir links/junções e sem entrar nas pastas de <paramref name="exclude"/>
+    /// (programas instalados dentro dela, como jogos dentro da pasta da Steam, que já têm o próprio tamanho).
+    /// </summary>
+    public static long MeasureFolder(string folder, IReadOnlyCollection<string> exclude, CancellationToken token = default)
+    {
+        long total = 0;
+        var pending = new Stack<string>();
+        pending.Push(folder);
+        var options = new EnumerationOptions { IgnoreInaccessible = true, AttributesToSkip = FileAttributes.ReparsePoint };
+        while (pending.Count > 0)
+        {
+            token.ThrowIfCancellationRequested();
+            var dir = new DirectoryInfo(pending.Pop());
+            try
+            {
+                foreach (var f in dir.EnumerateFiles("*", options)) total += f.Length;
+                foreach (var sub in dir.EnumerateDirectories("*", options))
+                    if (!exclude.Contains(sub.FullName.TrimEnd(Path.DirectorySeparatorChar), StringComparer.OrdinalIgnoreCase)) pending.Push(sub.FullName);
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or System.Security.SecurityException) { }
+        }
+        return total;
+    }
+
+    internal static TimeSpan PerFolderLimit = TimeSpan.FromSeconds(30);
+
+    /// <summary>Mede, em paralelo, os programas que não informam tamanho. Devolve o tamanho medido por chave do programa.</summary>
+    public static async Task<IReadOnlyDictionary<string, long>> MeasureMissingSizesAsync(IReadOnlyList<InstalledProgram> all, CancellationToken token)
+    {
+        var folders = all.Select(p => (Program: p, Folder: MeasurableFolder(p))).ToList();
+        var known = folders.Where(x => x.Folder is not null).Select(x => x.Folder!).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
+        var result = new System.Collections.Concurrent.ConcurrentDictionary<string, long>();
+        var targets = folders.Where(x => x.Program.SizeBytes is null && x.Folder is not null).ToList();
+        await Parallel.ForEachAsync(targets, new ParallelOptions { MaxDegreeOfParallelism = 3, CancellationToken = token }, (x, ct) =>
+        {
+            // Limite por pasta: uma pasta enorme ou um disco lento não deixam a tela "medindo" para sempre;
+            // quem passa do limite continua sem tamanho, em vez de mostrar um valor parcial.
+            using var perFolder = CancellationTokenSource.CreateLinkedTokenSource(ct);
+            perFolder.CancelAfter(PerFolderLimit);
+            var nested = known.Where(k => IsUnder(k, x.Folder!)).ToList();
+            try
+            {
+                long size = MeasureFolder(x.Folder!, nested, perFolder.Token);
+                if (size > 0) result[x.Program.Key] = size;
+            }
+            catch (OperationCanceledException) when (!ct.IsCancellationRequested) { }
+            return ValueTask.CompletedTask;
+        });
+        return result;
     }
 
     /// <summary>A própria Shift Control não é removida por esta tela: use o desinstalador dela no Windows.</summary>

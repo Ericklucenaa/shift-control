@@ -16,7 +16,10 @@ public sealed class ProgramRowVm(InstalledProgram program)
     public string PublisherText => string.IsNullOrWhiteSpace(Program.Publisher) ? L.Get("programs.unknownPublisher") : Program.Publisher!;
     public string VersionText => Program.Version ?? "—";
     public string SizeText => Program.SizeBytes is { } b ? Fmt.Bytes(b) : "—";
+    /// <summary>Explica de onde veio o tamanho quando foi medido na pasta (o programa não informou).</summary>
+    public string? SizeTip => Program.SizeMeasured ? L.Get("programs.sizeMeasured") : null;
     public string DateText => Program.InstalledOn?.ToString("d", L.Culture) ?? "—";
+    public string DriveText { get; } = InstalledPrograms.DriveOf(program) ?? "—";
     public bool IsProtected => InstalledPrograms.IsProtected(Program);
     public override string ToString() => Name;
 }
@@ -49,6 +52,12 @@ public sealed partial class ProgramsViewModel : ToolViewModel
 
     public ObservableCollection<ProgramRowVm> Programs { get; } = [];
     public IReadOnlyList<Choice<ProgramSort>> SortOptions { get; }
+    /// <summary>"Todos os discos" e cada disco que tem programas, com a contagem. Refeita a cada leitura.</summary>
+    public ObservableCollection<Choice<string?>> DriveOptions { get; } = [];
+    [ObservableProperty] public partial Choice<string?>? Drive { get; set; }
+    private bool _rebuildingDrives;
+    private CancellationTokenSource? _measure;
+    [ObservableProperty] public partial bool MeasuringSizes { get; set; }
     [ObservableProperty] public partial Choice<ProgramSort>? Sort { get; set; }
     [ObservableProperty] public partial string Search { get; set; } = "";
     [ObservableProperty] public partial bool Loaded { get; set; }
@@ -67,6 +76,10 @@ public sealed partial class ProgramsViewModel : ToolViewModel
 
     partial void OnSearchChanged(string value) => Filter();
     partial void OnSortChanged(Choice<ProgramSort>? value) => Filter();
+    partial void OnDriveChanged(Choice<string?>? value)
+    {
+        if (!_rebuildingDrives) Filter();
+    }
 
     [RelayCommand]
     public async Task RefreshAsync()
@@ -78,7 +91,9 @@ public sealed partial class ProgramsViewModel : ToolViewModel
         {
             _all = await Task.Run(InstalledPrograms.List);
             Loaded = true;
+            RebuildDriveOptions();
             Filter();
+            _ = MeasureMissingSizesAsync(_all);
         }
         catch (Exception ex)
         {
@@ -92,13 +107,75 @@ public sealed partial class ProgramsViewModel : ToolViewModel
     {
         if (!Loaded) return;
         string? selected = SelectedProgram?.Key;
-        var visible = InstalledPrograms.Query(_all, Search, Sort?.Value ?? ProgramSort.Name);
+        var visible = InstalledPrograms.Query(_all, Search, Sort?.Value ?? ProgramSort.Name, Drive?.Value);
         Programs.Clear();
         foreach (var p in visible) Programs.Add(new ProgramRowVm(p));
         SelectedProgram = selected is null ? null : Programs.FirstOrDefault(p => p.Key == selected);
         Empty = Programs.Count == 0;
         long total = _all.Sum(p => p.SizeBytes ?? 0);
-        Summary = L.F("programs.summary", Programs.Count, _all.Count, Fmt.Bytes(total));
+        Summary = L.F("programs.summary", Programs.Count, _all.Count, Fmt.Bytes(total)) + (MeasuringSizes ? " · " + L.Get("programs.measuring") : "");
+    }
+
+    /// <summary>
+    /// Muitos programas (jogos da Steam, drivers, ferramentas) não informam o tamanho ao Windows e ficariam no fim da
+    /// ordenação "Maior tamanho". Mede a pasta deles em segundo plano; a lista já aparece antes e é atualizada no fim.
+    /// </summary>
+    private async Task MeasureMissingSizesAsync(IReadOnlyList<InstalledProgram> snapshot)
+    {
+        _measure?.Cancel();
+        var cts = _measure = new CancellationTokenSource();
+        if (!snapshot.Any(p => p.SizeBytes is null)) return;
+        MeasuringSizes = true;
+        Filter();
+        try
+        {
+            var sizes = await Task.Run(() => InstalledPrograms.MeasureMissingSizesAsync(snapshot, cts.Token), cts.Token);
+            if (cts.IsCancellationRequested || !ReferenceEquals(snapshot, _all)) return; // a lista foi relida no meio
+            _all = _all.Select(p => p.SizeBytes is null && sizes.TryGetValue(p.Key, out long size) ? p with { SizeBytes = size, SizeMeasured = true } : p).ToList();
+        }
+        catch (OperationCanceledException) { return; }
+        catch (Exception ex) { _log.LogWarning(ex, "Falha ao medir o tamanho das pastas dos programas."); }
+        finally
+        {
+            if (ReferenceEquals(_measure, cts)) MeasuringSizes = false;
+        }
+        Filter();
+    }
+
+    /// <summary>Opções do filtro de disco a partir dos programas lidos; mantém o disco escolhido se ele ainda tiver programas.</summary>
+    private void RebuildDriveOptions()
+    {
+        string? keep = Drive?.Value;
+        var counts = _all.GroupBy(p => InstalledPrograms.DriveOf(p) ?? InstalledPrograms.UnknownDrive, StringComparer.OrdinalIgnoreCase)
+            .ToDictionary(g => g.Key, g => g.Count(), StringComparer.OrdinalIgnoreCase);
+        _rebuildingDrives = true;
+        try
+        {
+            DriveOptions.Clear();
+            DriveOptions.Add(new Choice<string?>(null, L.Get("programs.drive.all")));
+            foreach (var (drive, count) in counts.Where(c => c.Key != InstalledPrograms.UnknownDrive).OrderBy(c => c.Key, StringComparer.OrdinalIgnoreCase))
+            {
+                string? label = VolumeLabel(drive);
+                DriveOptions.Add(new Choice<string?>(drive, label is null
+                    ? L.F("programs.drive.option", drive, count)
+                    : L.F("programs.drive.optionLabel", drive, label, count)));
+            }
+            if (counts.TryGetValue(InstalledPrograms.UnknownDrive, out int unknown))
+                DriveOptions.Add(new Choice<string?>(InstalledPrograms.UnknownDrive, L.F("programs.drive.unknown", unknown)));
+            Drive = DriveOptions.FirstOrDefault(o => string.Equals(o.Value, keep, StringComparison.OrdinalIgnoreCase)) ?? DriveOptions[0];
+        }
+        finally { _rebuildingDrives = false; }
+    }
+
+    /// <summary>Nome do volume ("Jogos", "Dados"…). Discos desconectados ou sem nome ficam só com a letra.</summary>
+    private static string? VolumeLabel(string drive)
+    {
+        try
+        {
+            var info = new DriveInfo(drive + "\\");
+            return info.IsReady && !string.IsNullOrWhiteSpace(info.VolumeLabel) ? info.VolumeLabel : null;
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or ArgumentException) { return null; }
     }
 
     /// <summary>Roda o desinstalador oficial e espera ele terminar. Não encerra o desinstalador se a espera for cancelada.</summary>

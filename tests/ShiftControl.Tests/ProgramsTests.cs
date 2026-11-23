@@ -74,6 +74,70 @@ public class ProgramsTests
     }
 
     [Fact]
+    public void Drive_comes_from_install_folder_then_icon_then_uninstaller_ignoring_windows_storage()
+    {
+        string windows = Environment.GetFolderPath(Environment.SpecialFolder.Windows);
+        string cache = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "Package Cache");
+        Assert.Equal("D:", InstalledPrograms.DriveOf(P("Jogo", uninstall: @"C:\Uninst\u.exe", location: @"d:\Games\Jogo")));
+        Assert.Equal("E:", InstalledPrograms.DriveOf(P("Icone", uninstall: @"C:\Uninst\u.exe") with { DisplayIcon = "\"E:\\Apps\\app.exe\",0" }));
+        Assert.Equal("F:", InstalledPrograms.DriveOf(P("Desinst", uninstall: "\"F:\\Tools\\unins000.exe\" /SILENT")));
+        // MSI só com msiexec (sem caminho): não dá para saber.
+        Assert.Null(InstalledPrograms.DriveOf(P("Msi", uninstall: "MsiExec.exe /X{11111111-2222-3333-4444-555555555555}")));
+        // Só pistas guardadas pelo Windows: vale o disco delas (o do sistema).
+        string systemDrive = windows[..2].ToUpperInvariant();
+        Assert.Equal(systemDrive, InstalledPrograms.DriveOf(P("Runtime", uninstall: "\"" + Path.Combine(cache, "{x}", "vc_redist.exe") + "\" /uninstall")));
+        Assert.Equal(systemDrive, InstalledPrograms.DriveOf(P("NoWindows", uninstall: Path.Combine(windows, "unins000.exe"))));
+        // Instalador em cache no C:, mas o programa informa o próprio executável em outro disco.
+        Assert.Equal("E:", InstalledPrograms.DriveOf(P("Bundle", uninstall: "\"" + Path.Combine(cache, "{x}", "setup.exe") + "\" /uninstall")
+            with { DisplayIcon = @"E:\Bundle\bundle.exe" }));
+        Assert.Null(InstalledPrograms.DriveOf(P("Rede", uninstall: @"\\servidor\share\u.exe")));
+
+        var all = new[] { P("A", location: @"C:\A"), P("B", location: @"D:\B"), P("C", uninstall: "MsiExec.exe /X{11111111-2222-3333-4444-555555555555}") };
+        Assert.Equal(["B"], InstalledPrograms.Query(all, "", ProgramSort.Name, "d:").Select(p => p.Name));
+        Assert.Equal(["C"], InstalledPrograms.Query(all, "", ProgramSort.Name, InstalledPrograms.UnknownDrive).Select(p => p.Name));
+        Assert.Equal(3, InstalledPrograms.Query(all, "", ProgramSort.Name).Count);
+    }
+
+    [Fact]
+    public void Msi_product_codes_are_packed_and_their_installed_file_gives_the_drive()
+    {
+        Assert.Equal("1926E8D15D0BCE53481466615F760A7F", InstalledPrograms.PackGuid("{1D8E6291-B0D5-35EC-8441-6616F567A0F7}"));
+        Assert.Null(InstalledPrograms.PackGuid("not-a-guid"));
+        var msi = P("Ferramenta", uninstall: "MsiExec.exe /X{1D8E6291-B0D5-35EC-8441-6616F567A0F7}");
+        Assert.Null(InstalledPrograms.DriveOf(msi));
+        Assert.Equal("E:", InstalledPrograms.DriveOf(msi with { MsiFilePath = @"E:\Tools\Ferramenta\tool.exe" }));
+    }
+
+    [Fact]
+    public async Task Missing_sizes_are_measured_from_the_folder_without_counting_nested_programs_twice()
+    {
+        string root = Path.Combine(Path.GetTempPath(), "sc-size-" + Guid.NewGuid().ToString("N"));
+        string launcher = Path.Combine(root, "Launcher"), game = Path.Combine(launcher, "games", "Jogo");
+        Directory.CreateDirectory(game);
+        try
+        {
+            File.WriteAllBytes(Path.Combine(launcher, "launcher.exe"), new byte[1000]);
+            File.WriteAllBytes(Path.Combine(game, "data.pak"), new byte[5000]);
+            var launcherP = P("Launcher", uninstall: "\"" + Path.Combine(launcher, "uninstall.exe") + "\"", key: "L");
+            var gameP = P("Jogo", location: game, key: "J");
+            var informed = P("Informado", location: launcher, key: "I") with { SizeBytes = 42 };
+
+            Assert.Equal(launcher, InstalledPrograms.MeasurableFolder(launcherP)); // sem pasta: a do desinstalador
+            var sizes = await InstalledPrograms.MeasureMissingSizesAsync([launcherP, gameP, informed], TestContext.Current.CancellationToken);
+            Assert.Equal(1000, sizes["User|L"]);   // o jogo dentro da pasta do launcher não entra na conta dele
+            Assert.Equal(5000, sizes["User|J"]);
+            Assert.False(sizes.ContainsKey("User|I")); // quem informa o tamanho não é medido
+        }
+        finally { Directory.Delete(root, true); }
+
+        // Pastas amplas somariam outros programas: nunca são medidas.
+        foreach (var broad in new[] { Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles), Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                     Environment.GetFolderPath(Environment.SpecialFolder.Windows), Path.GetPathRoot(Environment.SystemDirectory)! })
+            Assert.Null(InstalledPrograms.MeasurableFolder(P("Amplo", location: broad)));
+        Assert.Null(InstalledPrograms.MeasurableFolder(P("Msi", uninstall: "MsiExec.exe /X{11111111-2222-3333-4444-555555555555}")));
+    }
+
+    [Fact]
     public void Candidate_names_drop_version_and_architecture()
     {
         var names = InstalledPrograms.CandidateNames(P("Python 3.12.0 (64-bit)", key: "{11111111-2222-3333-4444-555555555555}"));

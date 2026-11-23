@@ -19,7 +19,8 @@ Monitoramento local, sem conta e sem telemetria. Atualizações consultam as rel
 | Limpeza, armazenamento, inicialização, reparo, erros e rede | Implementados; ver matriz de validação |
 | Bandeja, mini-painel, alertas, instalador e atualizador | Implementados; distribuição de atualizações depende de release pública |
 | Gerenciador de Tarefas (processos, CPU/RAM, busca, filtros, detalhes e encerramento) | Implementado e validado com dados reais; processos críticos protegidos |
-| Programas instalados (busca, desinstalador oficial, sobras com Lixeira e backup do registro) | Implementado; fluxo completo validado com programa de teste (ver docs/RELEASE-0.3.7.md) |
+| Programas instalados (busca, filtro por disco, tamanho medido de quem não informa, desinstalador oficial, sobras com Lixeira e backup do registro) | Implementado; fluxo completo validado com programa de teste (ver docs/RELEASE-0.3.7.md) |
+| Componentes (processador, placa de vídeo com VRAM real, RAM por slot com avisos de XMP e pentes diferentes, placa-mãe/BIOS, discos, monitores, rede, áudio; copiar especificações) | Implementado; leitura real validada em testes de integração (ver docs/RELEASE-0.4.0.md) |
 
 Auditoria de 15/11/2026: **232 testes aprovados** e navegação nas **18 telas** em janela ampla e estreita. Veja [a validação por funcionalidade](docs/VALIDATION-2026-11-15.md), incluindo operações que não foram executadas no sistema real.
 

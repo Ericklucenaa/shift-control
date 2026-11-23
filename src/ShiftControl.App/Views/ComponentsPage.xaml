@@ -10,48 +10,74 @@
     <Page.Resources>
         <DataTemplate x:Key="ComponentTemplate" x:DataType="v:ComponentRow">
             <StackPanel Spacing="2">
-                <TextBlock Text="{x:Bind Name}" Style="{StaticResource BodyText}"
-                           FontWeight="SemiBold" TextWrapping="Wrap" IsTextSelectionEnabled="True" />
-                <TextBlock Text="{x:Bind Detail}" Style="{StaticResource CaptionText}"
-                           Visibility="{x:Bind v:ViewHelpers.Visible(HasDetail)}"
+                <TextBlock Text="{x:Bind Name}" Style="{StaticResource BodyText}" FontWeight="SemiBold"
+                           TextWrapping="Wrap" TextTrimming="None" IsTextSelectionEnabled="True" />
+                <TextBlock Text="{x:Bind Detail}" Style="{StaticResource CaptionText}" Visibility="{x:Bind v:ViewHelpers.Visible(HasDetail)}"
                            TextWrapping="Wrap" TextTrimming="None" IsTextSelectionEnabled="True" />
             </StackPanel>
         </DataTemplate>
+
         <DataTemplate x:Key="ComponentSectionTemplate" x:DataType="v:ComponentSection">
             <Border Style="{StaticResource CardBorder}">
-                <StackPanel Spacing="10">
-                    <TextBlock Text="{x:Bind Title}" Style="{StaticResource SectionTitleText}"
-                               AutomationProperties.HeadingLevel="Level2" TextWrapping="Wrap" />
+                <StackPanel Spacing="12">
+                    <Grid ColumnSpacing="8">
+                        <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
+                        <TextBlock Text="{x:Bind Title}" Style="{StaticResource CardTitleText}" AutomationProperties.HeadingLevel="Level2" TextWrapping="Wrap" />
+                        <TextBlock Grid.Column="1" Text="{x:Bind Summary}" Style="{StaticResource CaptionText}" VerticalAlignment="Center"
+                                   Visibility="{x:Bind v:ViewHelpers.Visible(HasSummary)}" />
+                    </Grid>
                     <ItemsRepeater ItemsSource="{x:Bind Rows}" ItemTemplate="{StaticResource ComponentTemplate}">
-                        <ItemsRepeater.Layout>
-                            <StackLayout Spacing="10" />
-                        </ItemsRepeater.Layout>
+                        <ItemsRepeater.Layout><StackLayout Spacing="12" /></ItemsRepeater.Layout>
                     </ItemsRepeater>
+                    <!-- Aviso prático (ex.: memória abaixo da velocidade nominal): texto, sem ícone decorativo. -->
+                    <Border Visibility="{x:Bind v:ViewHelpers.Visible(HasNote)}" BorderThickness="3,0,0,0" BorderBrush="{ThemeResource AttentionBrush}" Padding="10,2,0,2">
+                        <TextBlock Text="{x:Bind Note}" Style="{StaticResource CaptionText}" Foreground="{ThemeResource TextPrimaryBrush}"
+                                   TextWrapping="Wrap" TextTrimming="None" />
+                    </Border>
                 </StackPanel>
             </Border>
         </DataTemplate>
     </Page.Resources>
 
     <ScrollViewer VerticalScrollBarVisibility="Auto">
-        <StackPanel Padding="{StaticResource PagePadding}" Spacing="16" MaxWidth="1000">
+        <StackPanel Padding="{StaticResource PagePadding}" Spacing="16" MaxWidth="1200">
             <StackPanel Spacing="4">
                 <TextBlock Text="{l:Tr Key=nav.group.hardware, Upper=True}" Style="{StaticResource EyebrowText}" />
-                <TextBlock Text="{l:Tr Key=nav.components}" Style="{StaticResource PageTitleText}"
-                           AutomationProperties.HeadingLevel="Level1" TextWrapping="Wrap" />
-                <TextBlock Text="{l:Tr Key=components.subtitle}" Style="{StaticResource CaptionText}"
-                           TextWrapping="Wrap" TextTrimming="None" />
+                <TextBlock Text="{l:Tr Key=nav.components}" Style="{StaticResource PageTitleText}" AutomationProperties.HeadingLevel="Level1" TextWrapping="Wrap" />
+                <TextBlock Text="{l:Tr Key=components.subtitle}" Style="{StaticResource CaptionText}" TextWrapping="Wrap" TextTrimming="None" />
             </StackPanel>
-            <Button x:Name="RefreshButton" Content="{l:Tr Key=components.refresh}"
-                    Style="{StaticResource QuietButton}" Click="OnRefresh" />
-            <ProgressBar x:Name="LoadingBar" IsIndeterminate="True" Visibility="Collapsed"
-                         AutomationProperties.Name="{l:Tr Key=components.loading}" />
-            <InfoBar x:Name="ErrorBar" Severity="Error" IsClosable="False"
-                     Title="{l:Tr Key=components.error}" />
-            <ItemsRepeater x:Name="Sections" ItemTemplate="{StaticResource ComponentSectionTemplate}">
-                <ItemsRepeater.Layout>
-                    <StackLayout Spacing="12" />
-                </ItemsRepeater.Layout>
-            </ItemsRepeater>
+
+            <!-- Resumo do computador numa linha, com as ações da tela. -->
+            <Border Style="{StaticResource CardBorder}">
+                <Grid ColumnSpacing="16" RowSpacing="12">
+                    <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
+                    <StackPanel Spacing="4" VerticalAlignment="Center">
+                        <TextBlock Text="{l:Tr Key=components.headline}" Style="{StaticResource MetricLabelText}" />
+                        <TextBlock x:Name="Headline" Style="{StaticResource SectionTitleText}" TextWrapping="Wrap" TextTrimming="None" IsTextSelectionEnabled="True"
+                                   AutomationProperties.AutomationId="components.headline" />
+                    </StackPanel>
+                    <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                        <Button x:Name="CopyButton" Content="{l:Tr Key=components.copy}" Style="{StaticResource PrimaryButton}" Click="OnCopy" IsEnabled="False"
+                                ToolTipService.ToolTip="{l:Tr Key=components.copyTip}" AutomationProperties.AutomationId="components.copy" />
+                        <Button x:Name="RefreshButton" Content="{l:Tr Key=common.refresh}" Style="{StaticResource QuietButton}" Click="OnRefresh"
+                                AutomationProperties.AutomationId="components.refresh" />
+                    </StackPanel>
+                </Grid>
+            </Border>
+
+            <ProgressBar x:Name="LoadingBar" IsIndeterminate="True" Visibility="Collapsed" AutomationProperties.Name="{l:Tr Key=components.loading}" />
+            <InfoBar x:Name="StatusBar" IsClosable="True" />
+
+            <!-- Duas colunas independentes (cada cartão com a própria altura); uma só em janelas estreitas. -->
+            <Grid x:Name="Columns" ColumnSpacing="12" SizeChanged="OnColumnsSizeChanged" AutomationProperties.AutomationId="components.list">
+                <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition x:Name="RightColumnDef" Width="*" /></Grid.ColumnDefinitions>
+                <ItemsRepeater x:Name="LeftSections" ItemTemplate="{StaticResource ComponentSectionTemplate}">
+                    <ItemsRepeater.Layout><StackLayout Spacing="12" /></ItemsRepeater.Layout>
+                </ItemsRepeater>
+                <ItemsRepeater x:Name="RightSections" Grid.Column="1" ItemTemplate="{StaticResource ComponentSectionTemplate}">
+                    <ItemsRepeater.Layout><StackLayout Spacing="12" /></ItemsRepeater.Layout>
+                </ItemsRepeater>
+            </Grid>
         </StackPanel>
     </ScrollViewer>
 </Page>
